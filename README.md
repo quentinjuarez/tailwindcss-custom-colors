@@ -1,10 +1,10 @@
 ## Installation
 
 ```bash
-# Via npm
+# With npm
 npm i tailwindcss-custom-colors@latest
 
-# Via yarn
+# With yarn
 yarn add tailwindcss-custom-colors@latest
 ```
 
@@ -65,11 +65,7 @@ import { generateConfig } from "tailwindcss-custom-colors";
 const extendedColors = generateConfig(["primary", "secondary"]);
 
 module.exports = {
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./src/**/*.{index,vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: extendedColors,
