@@ -1,6 +1,6 @@
 {
   "name": "tailwindcss-colors",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Reactive color shades generator for TailwindCSS",
   "main": "dist/index.js",
   "files": [
