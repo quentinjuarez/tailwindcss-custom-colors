@@ -48,11 +48,10 @@ The function returns a config object for Tailwind CSS with the specified color n
 const variables = generateStyleVariables(colorParams, options);
 ```
 
-#### The generateConfig function takes the following parameters:
+#### The generateStyleVariables function takes the following parameters:
 
 - `colorParams`: An array of color params or a single color params including a color (hex) and a name.
-- `options` (optional): An object of options that allows you to customize the generated colors. The available option is `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`).
-  of css variables with the specified color names and their respective tints.
+- `options` (optional): An object of options that allows you to customize the generated colors. The available options are `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`) and `variablePrefix` (default: `undefined`), which determines the prefix for the css variable name, none by default.
 
 ## Example
 
