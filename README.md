@@ -38,7 +38,7 @@ const extendedColors = generateConfig(colorNames, options);
 #### The generateConfig function takes the following parameters:
 
 - `colorNames`: An array of color names or a single color name.
-- `options` (optional): An object of options that allows you to customize the generated colors. The available option is `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`).
+- `options` (optional): An object of options that allows you to customize the generated colors. The available options are `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`) and `variablePrefix` (default: `undefined`), which determines the prefix for the css variable name, none by default.
 
 The function returns a config object for Tailwind CSS with the specified color names and their respective tints.
 
@@ -57,6 +57,8 @@ const variables = generateStyleVariables(colorParams, options);
 ## Example
 
 Extend your tailwind config
+
+_tailwind.config.js_
 
 ```js
 /** @type {import('tailwindcss').Config} */
