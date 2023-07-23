@@ -2,6 +2,11 @@
   "name": "tailwindcss-custom-colors",
   "version": "1.0.1",
   "description": "Reactive color shades generator for TailwindCSS",
+  "author": "quentinjuarez",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quentinjuarez/tailwindcss-custom-colors"
+  },
   "main": "dist/index.js",
   "files": [
     "dist/**/*"
@@ -18,13 +23,12 @@
     "shades",
     "tints"
   ],
-  "author": "quentinjuarez",
-  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.4",
     "jest": "^29.6.1",
     "ts-jest": "^29.1.1",
     "typescript": "^5.1.6"
-  }
+  },
+  "license": "MIT"
 }
