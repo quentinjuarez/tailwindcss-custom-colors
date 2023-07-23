@@ -1,5 +1,5 @@
 {
-  "name": "tailwindcss-colors",
+  "name": "tailwindcss-custom-colors",
   "version": "1.0.0",
   "description": "Reactive color shades generator for TailwindCSS",
   "main": "dist/index.js",
