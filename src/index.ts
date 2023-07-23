@@ -2,15 +2,18 @@ import { darken, lighten } from "./utils/chroma";
 import { hexToRgbString } from "./utils/hexToRgb";
 import hexToHsl from "./utils/hexToHsl";
 import round from "./utils/round";
+import variableName from "./utils/variableName";
 
 const shades = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 const defaultOptions = {
   suffixMultiplier: 100,
+  variablePrefix: undefined,
 };
 
 interface Options {
-  suffixMultiplier: number;
+  suffixMultiplier?: number;
+  variablePrefix?: string;
 }
 
 interface TailwindColorsConfig {
@@ -27,7 +30,10 @@ const generateConfig = (
   colorNames: string[] | string,
   options?: Options
 ): TailwindColorsConfig => {
-  const selectedOptions = { ...defaultOptions, ...(options || {}) };
+  const { suffixMultiplier, variablePrefix } = {
+    ...defaultOptions,
+    ...(options || {}),
+  };
 
   const colors = Array.isArray(colorNames) ? colorNames : [colorNames];
 
@@ -35,13 +41,18 @@ const generateConfig = (
 
   colors.forEach((colorName) => {
     const colorTints: Record<string, string> = {
-      DEFAULT: `rgb(var(--${colorName}) / <alpha-value>)`,
+      DEFAULT: `rgb(var(${variableName(
+        colorName,
+        variablePrefix
+      )}) / <alpha-value>)`,
     };
     shades.forEach((shade) => {
-      const tintSuffix = `${shade * selectedOptions.suffixMultiplier}`;
-      colorTints[
+      const tintSuffix = `${shade * suffixMultiplier}`;
+      colorTints[tintSuffix] = `rgb(var(${variableName(
+        colorName,
+        variablePrefix,
         tintSuffix
-      ] = `rgb(var(--${colorName}-${tintSuffix}) / <alpha-value>)`;
+      )}) / <alpha-value>)`;
     });
 
     config[colorName] = colorTints;
@@ -65,24 +76,41 @@ const generateStyleVariables = (
   colorParams: ColorParams[] | ColorParams,
   options?: Options
 ): string => {
-  const selectedOptions = { ...defaultOptions, ...(options || {}) };
+  const { suffixMultiplier, variablePrefix } = {
+    ...defaultOptions,
+    ...(options || {}),
+  };
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
 
   const styles = colors.map(({ color, name }) => {
     const hslColor = hexToHsl(color);
-    const tintsString = [`--${name}: ${hexToRgbString(color)}`];
+    const tintsString = [
+      `${variableName(name, variablePrefix)}: ${hexToRgbString(color)}`,
+    ];
     shades.forEach((shade) => {
-      const tintSuffix = `${shade * selectedOptions.suffixMultiplier}`;
+      const tintSuffix = `${shade * suffixMultiplier}`;
       if (shade === 5) {
-        tintsString.push(`--${name}-${tintSuffix}: ${hexToRgbString(color)}`);
+        tintsString.push(
+          `${variableName(name, variablePrefix, tintSuffix)}: ${hexToRgbString(
+            color
+          )}`
+        );
       } else if (shade < 5) {
         let ratio = round(-0.2 * shade + 1);
         tintsString.push(
-          `--${name}-${tintSuffix}: ${lighten(hslColor, ratio)}`
+          `${variableName(name, variablePrefix, tintSuffix)}: ${lighten(
+            hslColor,
+            ratio
+          )}`
         );
       } else {
         let ratio = round(0.2 * shade - 1.0);
-        tintsString.push(`--${name}-${tintSuffix}: ${darken(hslColor, ratio)}`);
+        tintsString.push(
+          `${variableName(name, variablePrefix, tintSuffix)}: ${darken(
+            hslColor,
+            ratio
+          )}`
+        );
       }
     });
     return tintsString.join(";\n");
