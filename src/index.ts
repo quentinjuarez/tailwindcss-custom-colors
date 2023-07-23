@@ -6,7 +6,7 @@ import round from "./utils/round";
 const shades = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 const defaultOptions = {
-  suffixMultiplier: 100, // or 1
+  suffixMultiplier: 100,
 };
 
 interface Options {
@@ -33,18 +33,18 @@ const generateConfig = (
 
   const config: TailwindColorsConfig = {};
 
-  colors.forEach((color) => {
+  colors.forEach((colorName) => {
     const colorTints: Record<string, string> = {
-      DEFAULT: `rgb(var(${color}) / <alpha-value>)`,
+      DEFAULT: `rgb(var(--${colorName}) / <alpha-value>)`,
     };
     shades.forEach((shade) => {
       const tintSuffix = `${shade * selectedOptions.suffixMultiplier}`;
       colorTints[
         tintSuffix
-      ] = `rgb(var(${color}-${tintSuffix}) / <alpha-value>)`;
+      ] = `rgb(var(--${colorName}-${tintSuffix}) / <alpha-value>)`;
     });
 
-    config[color] = colorTints;
+    config[colorName] = colorTints;
   });
 
   return config;
@@ -61,7 +61,7 @@ interface ColorParams {
  * @param {Options} [options] - An object of options (optional)
  * @returns {string} A string of css variables
  */
-const generateReactiveStyles = (
+const generateStyleVariables = (
   colorParams: ColorParams[] | ColorParams,
   options?: Options
 ): string => {
@@ -70,17 +70,19 @@ const generateReactiveStyles = (
 
   const styles = colors.map(({ color, name }) => {
     const hslColor = hexToHsl(color);
-    const tintsString = [`${name}: ${hexToRgbString(color)}`];
+    const tintsString = [`--${name}: ${hexToRgbString(color)}`];
     shades.forEach((shade) => {
       const tintSuffix = `${shade * selectedOptions.suffixMultiplier}`;
       if (shade === 5) {
-        tintsString.push(`${name}-${tintSuffix}: ${hexToRgbString(color)}`);
+        tintsString.push(`--${name}-${tintSuffix}: ${hexToRgbString(color)}`);
       } else if (shade < 5) {
         let ratio = round(-0.2 * shade + 1);
-        tintsString.push(`${name}-${tintSuffix}: ${lighten(hslColor, ratio)}`);
+        tintsString.push(
+          `--${name}-${tintSuffix}: ${lighten(hslColor, ratio)}`
+        );
       } else {
         let ratio = round(0.2 * shade - 1.0);
-        tintsString.push(`${name}-${tintSuffix}: ${darken(hslColor, ratio)}`);
+        tintsString.push(`--${name}-${tintSuffix}: ${darken(hslColor, ratio)}`);
       }
     });
     return tintsString.join(";\n");
@@ -89,4 +91,4 @@ const generateReactiveStyles = (
   return styles.join(";\n");
 };
 
-export { generateConfig, generateReactiveStyles };
+export { generateConfig, generateStyleVariables };

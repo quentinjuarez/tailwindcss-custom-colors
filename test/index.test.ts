@@ -1,4 +1,4 @@
-import { generateConfig, generateReactiveStyles } from "../src/index";
+import { generateConfig, generateStyleVariables } from "../src/index";
 
 describe("generateConfig function", () => {
   const defaultKeys = [
@@ -61,21 +61,21 @@ describe("generateConfig function", () => {
   });
 });
 
-describe("generateReactiveStyles function", () => {
+describe("generateStyleVariables function", () => {
   it("should generate reactive styles with the correct format when given an array of color params", () => {
     const colorParams = [
       { color: "#FF0000", name: "red" },
       { color: "#00FF00", name: "green" },
       { color: "#0000FF", name: "blue" },
     ];
-    const styles = generateReactiveStyles(colorParams);
+    const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
     expect(styles.split(";\n").length).toBe(colorParams.length * 10);
   });
   it("should generate reactive styles with the correct format when given a single color params", () => {
     const colorParams = { color: "#FF0000", name: "red" };
-    const styles = generateReactiveStyles(colorParams);
+    const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
     expect(styles.split(";\n").length).toBe(10);
