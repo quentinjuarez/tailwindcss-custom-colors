@@ -1,7 +1,7 @@
 node_modules
 /dist
 .yarn
-
+coverage
 
 # Log files
 npm-debug.log*
