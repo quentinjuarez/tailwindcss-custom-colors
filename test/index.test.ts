@@ -1,4 +1,4 @@
-import { generateConfig, generateStyleVariables } from "../src/index";
+import { Options, generateConfig, generateStyleVariables } from "../src/index";
 
 describe("generateConfig function", () => {
   const keys = {
@@ -12,6 +12,30 @@ describe("generateConfig function", () => {
       "700",
       "800",
       "900",
+      "DEFAULT",
+      "contrast",
+      "complement",
+    ],
+    50: [
+      "50",
+      "100",
+      "150",
+      "200",
+      "250",
+      "300",
+      "350",
+      "400",
+      "450",
+      "500",
+      "550",
+      "600",
+      "650",
+      "700",
+      "750",
+      "800",
+      "850",
+      "900",
+      "950",
       "DEFAULT",
       "contrast",
       "complement",
@@ -55,7 +79,7 @@ describe("generateConfig function", () => {
 
   it("should generate a config object with suffixMultiplier options", () => {
     const colorName = "red";
-    const options = { suffixMultiplier: 1 };
+    const options: Options = { suffixMultiplier: 1 };
     const config = generateConfig(colorName, options);
 
     expect(config).toBeDefined();
@@ -67,7 +91,7 @@ describe("generateConfig function", () => {
 
   it("should generate a config object with variablePrefix options", () => {
     const colorName = "red";
-    const options = { variablePrefix: "custom" };
+    const options: Options = { variablePrefix: "custom" };
     const config = generateConfig(colorName, options);
 
     expect(config).toBeDefined();
@@ -76,7 +100,7 @@ describe("generateConfig function", () => {
 
   it("should generate a config object without contrast and complement options", () => {
     const colorName = "red";
-    const options = { contrast: false, complement: false };
+    const options: Options = { contrast: false, complement: false };
     const config = generateConfig(colorName, options);
 
     expect(config).toBeDefined();
@@ -84,6 +108,16 @@ describe("generateConfig function", () => {
     expect(Object.keys(config[colorName])).toStrictEqual(
       keys[100].slice(0, 10)
     );
+  });
+
+  it("should generate a config object with steps equals to 50", () => {
+    const colorName = "red";
+    const options: Options = { steps: 50 };
+    const config = generateConfig(colorName, options);
+
+    expect(config).toBeDefined();
+    expect(Object.keys(config)).toStrictEqual([colorName]);
+    expect(Object.keys(config[colorName])).toStrictEqual(keys[50]);
   });
 });
 
@@ -108,7 +142,7 @@ describe("generateStyleVariables function", () => {
   });
   it("should generate reactive styles with options", () => {
     const colorParams = { color: "#FF0000", name: "red" };
-    const options = { suffixMultiplier: 1, variablePrefix: "custom" };
+    const options: Options = { suffixMultiplier: 1, variablePrefix: "custom" };
     const styles = generateStyleVariables(colorParams, options);
 
     expect(styles).toBeDefined();
@@ -120,11 +154,21 @@ describe("generateStyleVariables function", () => {
   });
   it("should generate reactive styles without contrast and complement options", () => {
     const colorParams = { color: "#FF0000", name: "red" };
-    const options = { contrast: false, complement: false };
+    const options: Options = { contrast: false, complement: false };
     const styles = generateStyleVariables(colorParams, options);
 
     expect(styles).toBeDefined();
     const stylesArray = styles.split(";\n");
     expect(stylesArray.length).toBe(10);
+  });
+
+  it("should generate reactive styles with contrast and complement options", () => {
+    const colorParams = { color: "#FF0000", name: "red" };
+    const options: Options = { steps: 50 };
+    const styles = generateStyleVariables(colorParams, options);
+
+    expect(styles).toBeDefined();
+    const stylesArray = styles.split(";\n");
+    expect(stylesArray.length).toBe(22);
   });
 });

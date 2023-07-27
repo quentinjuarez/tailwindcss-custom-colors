@@ -9,9 +9,38 @@ import hexToHsl from "./utils/hexToHsl";
 import round from "./utils/round";
 import variableName from "./utils/variableName";
 
-const shades = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const shades = {
+  100: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  50: [
+    0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5,
+  ],
+};
 
-const defaultOptions = {
+export interface Options {
+  suffixMultiplier?: 100 | 10 | 1;
+  variablePrefix?: string;
+  contrast?: boolean;
+  complement?: boolean;
+  classification?: {
+    light: string;
+    dark: string;
+  };
+  steps?: 100 | 50;
+}
+
+interface DefaultOptions {
+  suffixMultiplier: 100;
+  variablePrefix: undefined;
+  contrast: true;
+  complement: true;
+  classification: {
+    light: "#FFFFFF";
+    dark: "#000000";
+  };
+  steps: 100;
+}
+
+const defaultOptions: DefaultOptions = {
   suffixMultiplier: 100,
   variablePrefix: undefined,
   contrast: true,
@@ -20,18 +49,8 @@ const defaultOptions = {
     light: "#FFFFFF",
     dark: "#000000",
   },
+  steps: 100,
 };
-
-interface Options {
-  suffixMultiplier?: number;
-  variablePrefix?: string;
-  contrast?: boolean;
-  complement?: boolean;
-  classification?: {
-    light: string;
-    dark: string;
-  };
-}
 
 interface TailwindColorsConfig {
   [key: string]: Record<string, string>;
@@ -47,7 +66,7 @@ const generateConfig = (
   colorNames: string[] | string,
   options?: Options
 ): TailwindColorsConfig => {
-  const { suffixMultiplier, variablePrefix, contrast, complement } = {
+  const { suffixMultiplier, variablePrefix, contrast, complement, steps } = {
     ...defaultOptions,
     ...(options || {}),
   };
@@ -81,7 +100,7 @@ const generateConfig = (
           }
         : {}),
     };
-    shades.forEach((shade) => {
+    shades[steps].forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
       colorTints[tintSuffix] = `rgb(var(${variableName(
         colorName,
@@ -117,6 +136,7 @@ const generateStyleVariables = (
     contrast,
     complement,
     classification,
+    steps,
   } = {
     ...defaultOptions,
     ...(options || {}),
@@ -145,7 +165,7 @@ const generateStyleVariables = (
           ]
         : []),
     ];
-    shades.forEach((shade) => {
+    shades[steps].forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
       if (shade === 5) {
         tintsString.push(
