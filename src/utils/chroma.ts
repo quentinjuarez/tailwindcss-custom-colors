@@ -2,12 +2,16 @@ import hexToRgb, { rgbToString } from "./hexToRgb";
 import hslToRgb from "./hslToRgb";
 
 function darkenHsl(hsl: [number, number, number], val: number) {
+  hsl = [...hsl];
+
   hsl[2] -= hsl[2] * val;
 
   return hsl;
 }
 
 function lightenHsl(hsl: [number, number, number], val: number) {
+  hsl = [...hsl];
+
   hsl[2] += hsl[2] * val;
 
   return hsl;

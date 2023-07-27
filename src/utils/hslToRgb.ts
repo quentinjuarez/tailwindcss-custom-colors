@@ -1,15 +1,34 @@
+import round from "./round";
+
+function hueToRgb([p, q, t]: [number, number, number]) {
+  if (t < 0) t += 1;
+  if (t > 1) t -= 1;
+  if (t < 1 / 6) return p + (q - p) * 6 * t;
+  if (t < 1 / 2) return q;
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+  return p;
+}
+
 export default function hslToRgb([h, s, l]: [number, number, number]): [
   number,
   number,
   number
 ] {
-  const k = (n: number) => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) =>
-    l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const roundedL = round(l);
+
+  if (s === 0) {
+    return [
+      Math.round(roundedL * 255),
+      Math.round(roundedL * 255),
+      Math.round(roundedL * 255),
+    ];
+  }
+  const q = roundedL < 0.5 ? roundedL * (1 + s) : roundedL + s - roundedL * s;
+  const p = 2 * roundedL - q;
+
   return [
-    Math.round(255 * f(0)),
-    Math.round(255 * f(8)),
-    Math.round(255 * f(4)),
+    Math.round(hueToRgb([p, q, h + 1 / 3]) * 255),
+    Math.round(hueToRgb([p, q, h]) * 255),
+    Math.round(hueToRgb([p, q, h - 1 / 3]) * 255),
   ];
 }
