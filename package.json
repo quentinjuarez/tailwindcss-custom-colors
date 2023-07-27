@@ -13,7 +13,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "patch": "yarn build && npm version patch && git push --follow-tags && npm publish"
   },
   "keywords": [
     "tailwind",
