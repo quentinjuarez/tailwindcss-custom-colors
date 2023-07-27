@@ -1,6 +1,6 @@
 {
   "name": "tailwindcss-custom-colors",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Reactive color shades generator for TailwindCSS",
   "author": "quentinjuarez",
   "repository": {
