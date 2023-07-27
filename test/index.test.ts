@@ -13,8 +13,23 @@ describe("generateConfig function", () => {
       "800",
       "900",
       "DEFAULT",
+      "contrast",
+      "complement",
     ],
-    1: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "DEFAULT"],
+    1: [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "DEFAULT",
+      "contrast",
+      "complement",
+    ],
   };
 
   it("should generate a config object with the correct format when given an array of color names", () => {
@@ -58,6 +73,18 @@ describe("generateConfig function", () => {
     expect(config).toBeDefined();
     expect(Object.keys(config)).toStrictEqual([colorName]);
   });
+
+  it("should generate a config object without contrast and complement options", () => {
+    const colorName = "red";
+    const options = { contrast: false, complement: false };
+    const config = generateConfig(colorName, options);
+
+    expect(config).toBeDefined();
+    expect(Object.keys(config)).toStrictEqual([colorName]);
+    expect(Object.keys(config[colorName])).toStrictEqual(
+      keys[100].slice(0, 10)
+    );
+  });
 });
 
 describe("generateStyleVariables function", () => {
@@ -70,14 +97,14 @@ describe("generateStyleVariables function", () => {
     const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
-    expect(styles.split(";\n").length).toBe(colorParams.length * 10);
+    expect(styles.split(";\n").length).toBe(colorParams.length * 12);
   });
   it("should generate reactive styles with the correct format when given a single color params", () => {
     const colorParams = { color: "#FF0000", name: "red" };
     const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
-    expect(styles.split(";\n").length).toBe(10);
+    expect(styles.split(";\n").length).toBe(12);
   });
   it("should generate reactive styles with options", () => {
     const colorParams = { color: "#FF0000", name: "red" };
@@ -86,9 +113,18 @@ describe("generateStyleVariables function", () => {
 
     expect(styles).toBeDefined();
     const stylesArray = styles.split(";\n");
-    expect(stylesArray.length).toBe(10);
+    expect(stylesArray.length).toBe(12);
     stylesArray.forEach((style) => {
       expect(style).toContain(options.variablePrefix);
     });
+  });
+  it("should generate reactive styles without contrast and complement options", () => {
+    const colorParams = { color: "#FF0000", name: "red" };
+    const options = { contrast: false, complement: false };
+    const styles = generateStyleVariables(colorParams, options);
+
+    expect(styles).toBeDefined();
+    const stylesArray = styles.split(";\n");
+    expect(stylesArray.length).toBe(10);
   });
 });

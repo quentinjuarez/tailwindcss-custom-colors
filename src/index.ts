@@ -1,4 +1,9 @@
-import { darken, lighten } from "./utils/chroma";
+import {
+  darken,
+  lighten,
+  contrast as contrastCalc,
+  complement as complementCalc,
+} from "./utils/chroma";
 import { hexToRgbString } from "./utils/hexToRgb";
 import hexToHsl from "./utils/hexToHsl";
 import round from "./utils/round";
@@ -9,11 +14,23 @@ const shades = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const defaultOptions = {
   suffixMultiplier: 100,
   variablePrefix: undefined,
+  contrast: true,
+  complement: true,
+  classification: {
+    light: "#FFFFFF",
+    dark: "#000000",
+  },
 };
 
 interface Options {
   suffixMultiplier?: number;
   variablePrefix?: string;
+  contrast?: boolean;
+  complement?: boolean;
+  classification?: {
+    light: string;
+    dark: string;
+  };
 }
 
 interface TailwindColorsConfig {
@@ -30,7 +47,7 @@ const generateConfig = (
   colorNames: string[] | string,
   options?: Options
 ): TailwindColorsConfig => {
-  const { suffixMultiplier, variablePrefix } = {
+  const { suffixMultiplier, variablePrefix, contrast, complement } = {
     ...defaultOptions,
     ...(options || {}),
   };
@@ -45,6 +62,24 @@ const generateConfig = (
         colorName,
         variablePrefix
       )}) / <alpha-value>)`,
+      ...(contrast
+        ? {
+            contrast: `rgb(var(${variableName(
+              colorName,
+              variablePrefix,
+              "contrast"
+            )}) / <alpha-value>)`,
+          }
+        : {}),
+      ...(complement
+        ? {
+            complement: `rgb(var(${variableName(
+              colorName,
+              variablePrefix,
+              "complement"
+            )}) / <alpha-value>)`,
+          }
+        : {}),
     };
     shades.forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
@@ -76,7 +111,13 @@ const generateStyleVariables = (
   colorParams: ColorParams[] | ColorParams,
   options?: Options
 ): string => {
-  const { suffixMultiplier, variablePrefix } = {
+  const {
+    suffixMultiplier,
+    variablePrefix,
+    contrast,
+    complement,
+    classification,
+  } = {
     ...defaultOptions,
     ...(options || {}),
   };
@@ -86,6 +127,23 @@ const generateStyleVariables = (
     const hslColor = hexToHsl(color);
     const tintsString = [
       `${variableName(name, variablePrefix)}: ${hexToRgbString(color)}`,
+      ...(contrast
+        ? [
+            `${variableName(name, variablePrefix, "contrast")}: ${contrastCalc(
+              hslColor,
+              classification
+            )}`,
+          ]
+        : []),
+      ...(complement
+        ? [
+            `${variableName(
+              name,
+              variablePrefix,
+              "complement"
+            )}: ${complementCalc(hslColor, classification)}`,
+          ]
+        : []),
     ];
     shades.forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
