@@ -197,4 +197,77 @@ const generateStyleVariables = (
   return styles.join(";\n");
 };
 
-export { generateConfig, generateStyleVariables };
+/**
+ * Generate a config colors object for tailwindcss
+ * @param {ColorParams[] | ColorParams} colorParams - An array of color params or a single color params
+ * @param {Options} [options] - An object of options (optional)
+ * @returns {TailwindColorsConfig} A config object for tailwindcss
+ */
+const generateConfigWithColors = (
+  colorParams: ColorParams[] | ColorParams,
+  options?: Options
+): TailwindColorsConfig => {
+  const {
+    suffixMultiplier,
+    variablePrefix,
+    contrast,
+    complement,
+    classification,
+    steps,
+  } = {
+    ...defaultOptions,
+    ...(options || {}),
+  };
+  const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
+
+  const config: TailwindColorsConfig = {};
+
+  colors.forEach(({ color, name }) => {
+    const hslColor = hexToHsl(color);
+
+    const colorTints: Record<string, string> = {
+      DEFAULT: `rgb(${hexToRgbString(color)} / <alpha-value>)`,
+      ...(contrast
+        ? {
+            contrast: `rgb(${contrastCalc(
+              hslColor,
+              classification
+            )} / <alpha-value>)`,
+          }
+        : {}),
+      ...(complement
+        ? {
+            complement: `rgb(${complementCalc(
+              hslColor,
+              classification
+            )} / <alpha-value>)`,
+          }
+        : {}),
+    };
+
+    shades[steps].forEach((shade) => {
+      const tintSuffix = `${shade * suffixMultiplier}`;
+      if (shade === 5) {
+        colorTints[tintSuffix] = colorTints.DEFAULT;
+      } else if (shade < 5) {
+        let ratio = round(-0.2 * shade + 1);
+        colorTints[tintSuffix] = `rgb(${lighten(
+          hslColor,
+          ratio
+        )} / <alpha-value>)`;
+      } else {
+        let ratio = round(0.2 * shade - 1.0);
+        colorTints[tintSuffix] = `rgb(${darken(
+          hslColor,
+          ratio
+        )} / <alpha-value>)`;
+      }
+    });
+
+    config[name] = colorTints;
+  });
+
+  return config;
+};
+
+export { generateConfig, generateStyleVariables, generateConfigWithColors };

@@ -1,61 +1,66 @@
-import { Options, generateConfig, generateStyleVariables } from "../src/index";
+import {
+  Options,
+  generateConfig,
+  generateStyleVariables,
+  generateConfigWithColors,
+} from "../src/index";
+
+const keys = {
+  100: [
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+    "DEFAULT",
+    "contrast",
+    "complement",
+  ],
+  50: [
+    "50",
+    "100",
+    "150",
+    "200",
+    "250",
+    "300",
+    "350",
+    "400",
+    "450",
+    "500",
+    "550",
+    "600",
+    "650",
+    "700",
+    "750",
+    "800",
+    "850",
+    "900",
+    "950",
+    "DEFAULT",
+    "contrast",
+    "complement",
+  ],
+  1: [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "DEFAULT",
+    "contrast",
+    "complement",
+  ],
+};
 
 describe("generateConfig function", () => {
-  const keys = {
-    100: [
-      "100",
-      "200",
-      "300",
-      "400",
-      "500",
-      "600",
-      "700",
-      "800",
-      "900",
-      "DEFAULT",
-      "contrast",
-      "complement",
-    ],
-    50: [
-      "50",
-      "100",
-      "150",
-      "200",
-      "250",
-      "300",
-      "350",
-      "400",
-      "450",
-      "500",
-      "550",
-      "600",
-      "650",
-      "700",
-      "750",
-      "800",
-      "850",
-      "900",
-      "950",
-      "DEFAULT",
-      "contrast",
-      "complement",
-    ],
-    1: [
-      "1",
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "DEFAULT",
-      "contrast",
-      "complement",
-    ],
-  };
-
   it("should generate a config object with the correct format when given an array of color names", () => {
     const colorNames = ["red", "green", "blue"];
     const config = generateConfig(colorNames);
@@ -181,5 +186,36 @@ describe("generateStyleVariables function", () => {
     expect(styles).toBeDefined();
     const stylesArray = styles.split(";\n");
     expect(stylesArray.length).toBe(22);
+  });
+});
+
+describe("generateConfigWithColors function", () => {
+  it("should generate a config object with the correct format when given an array of color names", () => {
+    const colorParams = [
+      { color: "#FF0000", name: "red" },
+      { color: "#00FF00", name: "green" },
+      { color: "#0000FF", name: "blue" },
+    ];
+    const config = generateConfigWithColors(colorParams);
+
+    console.log(config);
+
+    const colorNames = colorParams.map(({ name }) => name);
+
+    expect(config).toBeDefined();
+    expect(Object.keys(config)).toStrictEqual(colorNames);
+
+    colorNames.forEach((colorName) => {
+      expect(Object.keys(config[colorName])).toStrictEqual(keys[100]);
+    });
+  });
+
+  it("should generate a config object with the correct format when given a single color name", () => {
+    const colorParams = { color: "#FF0000", name: "red" };
+    const config = generateConfigWithColors(colorParams);
+
+    expect(config).toBeDefined();
+    expect(Object.keys(config)).toStrictEqual([colorParams.name]);
+    expect(Object.keys(config[colorParams.name])).toStrictEqual(keys[100]);
   });
 });
