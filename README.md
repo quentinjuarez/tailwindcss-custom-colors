@@ -81,7 +81,6 @@ module.exports = {
 ```json
 {
   "primary": {
-    "DEFAULT": "rgb(var(--primary) / <alpha-value>)",
     "100": "rgb(var(--primary-100) / <alpha-value>)",
     "200": "rgb(var(--primary-200) / <alpha-value>)",
     "300": "rgb(var(--primary-300) / <alpha-value>)",
@@ -90,10 +89,12 @@ module.exports = {
     "600": "rgb(var(--primary-600) / <alpha-value>)",
     "700": "rgb(var(--primary-700) / <alpha-value>)",
     "800": "rgb(var(--primary-800) / <alpha-value>)",
-    "900": "rgb(var(--primary-900) / <alpha-value>)"
+    "900": "rgb(var(--primary-900) / <alpha-value>)",
+    "DEFAULT": "rgb(var(--primary) / <alpha-value>)",
+    "contrast": "rgb(var(--primary-contrast) / <alpha-value>)",
+    "complement": "rgb(var(--primary-complement) / <alpha-value>)"
   },
   "secondary": {
-    "DEFAULT": "rgb(var(--secondary) / <alpha-value>)",
     "100": "rgb(var(--secondary-100) / <alpha-value>)",
     "200": "rgb(var(--secondary-200) / <alpha-value>)",
     "300": "rgb(var(--secondary-300) / <alpha-value>)",
@@ -102,7 +103,10 @@ module.exports = {
     "600": "rgb(var(--secondary-600) / <alpha-value>)",
     "700": "rgb(var(--secondary-700) / <alpha-value>)",
     "800": "rgb(var(--secondary-800) / <alpha-value>)",
-    "900": "rgb(var(--secondary-900) / <alpha-value>)"
+    "900": "rgb(var(--secondary-900) / <alpha-value>)",
+    "DEFAULT": "rgb(var(--secondary) / <alpha-value>)",
+    "contrast": "rgb(var(--secondary-contrast) / <alpha-value>)",
+    "complement": "rgb(var(--secondary-complement) / <alpha-value>)"
   }
 }
 ```
@@ -130,33 +134,35 @@ const variables = generateStyleVariables(
 
 ```css
 --primary: 148 11 223;
---primary-100: 223 171 251;
---primary-200: 315 413 262;
---primary-300: 413 671 275;
---primary-400: 482 852 283;
+--primary-contrast: 255 255 255;
+--primary-complement: 0 0 0;
+--primary-100: 223 172 251;
+--primary-200: 207 128 249;
+--primary-300: 188 80 247;
+--primary-400: 172 36 245;
 --primary-500: 148 11 223;
---primary-600: 400 635 273;
---primary-700: 268 288 257;
---primary-800: 139 10 208;
---primary-900: 28 2 42;
+--primary-600: 120 8 180;
+--primary-700: 91 6 136;
+--primary-800: 58 4 88;
+--primary-900: 29 2 44;
 --secondary: 255 213 52;
+--secondary-contrast: 0 0 0;
+--secondary-complement: 255 255 255;
 --secondary-100: 255 263 296;
---secondary-200: 255 329 626;
---secondary-300: 255 400 979;
---secondary-400: 255 449 1226;
+--secondary-200: 255 251 235;
+--secondary-300: 255 239 173;
+--secondary-400: 255 226 112;
 --secondary-500: 255 213 52;
---secondary-600: 255 390 929;
---secondary-700: 255 295 456;
---secondary-800: 255 210 29;
---secondary-900: 57 45 0;
+--secondary-600: 245 196 0;
+--secondary-700: 184 147 0;
+--secondary-800: 122 98 0;
+--secondary-900: 61 49 0;
 ```
 
 ### Import variables
 
-#### by creating a style tag
-
 ```js
-const style = document.create("style");
+const style = document.createElement("style");
 style.innerHTML = `
     @layer base {
       :root {
@@ -164,12 +170,4 @@ style.innerHTML = `
       }
     }`;
 document.head.appendChild(style);
-```
-
-#### by creating a v-bind style attribute (VueJS)
-
-```vue
-<template>
-  <div :style="variables"></div>
-</template>
 ```

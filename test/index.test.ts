@@ -131,7 +131,18 @@ describe("generateStyleVariables function", () => {
     const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
-    expect(styles.split(";\n").length).toBe(colorParams.length * 12);
+
+    const stylesArray = styles.split(";\n");
+    expect(stylesArray.length).toBe(colorParams.length * 12);
+
+    const PALETTE = stylesArray
+      .map((style) => {
+        const [colorName, colorValue] = style.split(": ");
+        const [r, g, b] = colorValue.split(" ").map(Number);
+        return `\x1b[48;2;${r};${g};${b}m${colorName}\x1b[0m`;
+      })
+      .join("\n");
+    console.log(PALETTE);
   });
   it("should generate reactive styles with the correct format when given a single color params", () => {
     const colorParams = { color: "#FF0000", name: "red" };
