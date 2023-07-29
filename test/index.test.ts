@@ -198,8 +198,6 @@ describe("generateConfigWithColors function", () => {
     ];
     const config = generateConfigWithColors(colorParams);
 
-    console.log(config);
-
     const colorNames = colorParams.map(({ name }) => name);
 
     expect(config).toBeDefined();
