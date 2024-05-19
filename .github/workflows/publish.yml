@@ -17,6 +17,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "16"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Enable Corepack and use Yarn
         run: corepack enable && corepack prepare yarn@3.5.0 --activate
