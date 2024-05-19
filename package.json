@@ -14,7 +14,8 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "patch": "yarn build && npm version patch && git push --follow-tags"
+    "lint": "eslint . --fix",
+    "format": "prettier --write ."
   },
   "keywords": [
     "tailwind",
@@ -27,9 +28,16 @@
   "devDependencies": {
     "@types/jest": "^29.5.3",
     "@types/node": "^20.4.4",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
+    "eslint": "^9.3.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
     "jest": "^29.6.1",
+    "prettier": "^3.2.5",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "typescript-eslint": "^7.9.0"
   },
   "license": "MIT",
   "packageManager": "yarn@3.5.0"
