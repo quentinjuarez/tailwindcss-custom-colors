@@ -26,6 +26,7 @@ export interface Options {
     dark: string;
   };
   steps?: 100 | 50;
+  default?: boolean;
 }
 
 interface DefaultOptions {
@@ -38,6 +39,7 @@ interface DefaultOptions {
     dark: "#000000";
   };
   steps: 100;
+  default: true;
 }
 
 const defaultOptions: DefaultOptions = {
@@ -50,6 +52,7 @@ const defaultOptions: DefaultOptions = {
     dark: "#000000",
   },
   steps: 100,
+  default: true,
 };
 
 const computeOptions = (options: Options) => {
@@ -75,37 +78,47 @@ const generateConfig = (
   colorNames: string[] | string,
   options?: Options
 ): TailwindColorsConfig => {
-  const { suffixMultiplier, variablePrefix, contrast, complement, steps } =
-    computeOptions(options || {});
+  const {
+    suffixMultiplier,
+    variablePrefix,
+    contrast,
+    complement,
+    steps,
+    default: defaultOption,
+  } = computeOptions(options || {});
 
   const colors = Array.isArray(colorNames) ? colorNames : [colorNames];
 
   const config: TailwindColorsConfig = {};
 
   colors.forEach((colorName) => {
-    const colorTints: Record<string, string> = {
+    const defaultColor = {
       DEFAULT: `rgb(var(${variableName(
         colorName,
         variablePrefix
       )}) / <alpha-value>)`,
-      ...(contrast
-        ? {
-            contrast: `rgb(var(${variableName(
-              colorName,
-              variablePrefix,
-              "contrast"
-            )}) / <alpha-value>)`,
-          }
-        : {}),
-      ...(complement
-        ? {
-            complement: `rgb(var(${variableName(
-              colorName,
-              variablePrefix,
-              "complement"
-            )}) / <alpha-value>)`,
-          }
-        : {}),
+    };
+
+    const contrastColor = {
+      contrast: `rgb(var(${variableName(
+        colorName,
+        variablePrefix,
+        "contrast"
+      )}) / <alpha-value>)`,
+    };
+
+    const complementColor = {
+      complement: `rgb(var(${variableName(
+        colorName,
+        variablePrefix,
+        "complement"
+      )}) / <alpha-value>)`,
+    };
+
+    const colorTints: Record<string, string> = {
+      ...(defaultOption ? defaultColor : {}),
+      ...(contrast ? contrastColor : {}),
+      ...(complement ? complementColor : {}),
     };
     shades[steps].forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
@@ -144,31 +157,34 @@ const generateStyleVariables = (
     complement,
     classification,
     steps,
+    default: defaultOption,
   } = computeOptions(options || {});
 
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
 
   const styles = colors.map(({ color, name }) => {
     const hslColor = hexToHsl(color);
-    const tintsString = [
+
+    const defaultTintColor = [
       `${variableName(name, variablePrefix)}: ${hexToRgbString(color)}`,
-      ...(contrast
-        ? [
-            `${variableName(name, variablePrefix, "contrast")}: ${contrastCalc(
-              hslColor,
-              classification
-            )}`,
-          ]
-        : []),
-      ...(complement
-        ? [
-            `${variableName(
-              name,
-              variablePrefix,
-              "complement"
-            )}: ${complementCalc(hslColor, classification)}`,
-          ]
-        : []),
+    ];
+    const contrastTintColor = [
+      `${variableName(name, variablePrefix, "contrast")}: ${contrastCalc(
+        hslColor,
+        classification
+      )}`,
+    ];
+    const complementTintColor = [
+      `${variableName(name, variablePrefix, "complement")}: ${complementCalc(
+        hslColor,
+        classification
+      )}`,
+    ];
+
+    const tintsString = [
+      ...(defaultOption ? defaultTintColor : []),
+      ...(contrast ? contrastTintColor : []),
+      ...(complement ? complementTintColor : []),
     ];
     shades[steps].forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
@@ -219,6 +235,7 @@ const generateConfigWithColors = (
     complement,
     classification,
     steps,
+    default: defaultOption,
   } = computeOptions(options || {});
 
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
@@ -228,24 +245,26 @@ const generateConfigWithColors = (
   colors.forEach(({ color, name }) => {
     const hslColor = hexToHsl(color);
 
-    const colorTints: Record<string, string> = {
+    const defaultColor = {
       DEFAULT: `rgb(${hexToRgbString(color)} / <alpha-value>)`,
-      ...(contrast
-        ? {
-            contrast: `rgb(${contrastCalc(
-              hslColor,
-              classification
-            )} / <alpha-value>)`,
-          }
-        : {}),
-      ...(complement
-        ? {
-            complement: `rgb(${complementCalc(
-              hslColor,
-              classification
-            )} / <alpha-value>)`,
-          }
-        : {}),
+    };
+    const contrastColor = {
+      contrast: `rgb(${contrastCalc(
+        hslColor,
+        classification
+      )} / <alpha-value>)`,
+    };
+    const complementColor = {
+      complement: `rgb(${complementCalc(
+        hslColor,
+        classification
+      )} / <alpha-value>)`,
+    };
+
+    const colorTints: Record<string, string> = {
+      ...(defaultOption ? defaultColor : {}),
+      ...(contrast ? contrastColor : {}),
+      ...(complement ? complementColor : {}),
     };
 
     shades[steps].forEach((shade) => {
