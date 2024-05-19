@@ -31,6 +31,11 @@ jobs:
         if: ${{ success() }}
         run: yarn build
 
+      - name: Configure Git
+        run: |
+          git config --global user.email "quentin.juarez@hotmail.fr"
+          git config --global user.name "Quentin Juarez"
+
       - name: Bump package version (patch)
         run: npm version patch
         env:
