@@ -9,12 +9,12 @@ import hexToHsl from "./utils/hexToHsl";
 import round from "./utils/round";
 import variableName from "./utils/variableName";
 
-const shades = {
+const SHADES = {
   100: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-  50: [
-    0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5,
-  ],
+  50: [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9],
 };
+
+const EXTRA_SHADES = [0.5, 9.5];
 
 export interface Options {
   suffixMultiplier?: 100 | 10 | 1;
@@ -27,6 +27,7 @@ export interface Options {
   };
   steps?: 100 | 50;
   default?: boolean;
+  extraShades?: boolean;
 }
 
 interface DefaultOptions {
@@ -40,6 +41,7 @@ interface DefaultOptions {
   };
   steps: 100;
   default: true;
+  extraShades: true;
 }
 
 const defaultOptions: DefaultOptions = {
@@ -53,6 +55,7 @@ const defaultOptions: DefaultOptions = {
   },
   steps: 100,
   default: true,
+  extraShades: true,
 };
 
 const computeOptions = (options: Options) => {
@@ -85,6 +88,7 @@ const generateConfig = (
     complement,
     steps,
     default: defaultOption,
+    extraShades,
   } = computeOptions(options || {});
 
   const colors = Array.isArray(colorNames) ? colorNames : [colorNames];
@@ -120,7 +124,14 @@ const generateConfig = (
       ...(contrast ? contrastColor : {}),
       ...(complement ? complementColor : {}),
     };
-    shades[steps].forEach((shade) => {
+
+    let shades = SHADES[steps];
+
+    if (extraShades) {
+      shades = [...shades, ...EXTRA_SHADES];
+    }
+
+    shades.forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
       colorTints[tintSuffix] = `rgb(var(${variableName(
         colorName,
@@ -158,6 +169,7 @@ const generateStyleVariables = (
     classification,
     steps,
     default: defaultOption,
+    extraShades,
   } = computeOptions(options || {});
 
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
@@ -186,7 +198,14 @@ const generateStyleVariables = (
       ...(contrast ? contrastTintColor : []),
       ...(complement ? complementTintColor : []),
     ];
-    shades[steps].forEach((shade) => {
+
+    let shades = SHADES[steps];
+
+    if (extraShades) {
+      shades = [...shades, ...EXTRA_SHADES];
+    }
+
+    shades.forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
       if (shade === 5) {
         tintsString.push(
@@ -236,6 +255,7 @@ const generateConfigWithColors = (
     classification,
     steps,
     default: defaultOption,
+    extraShades,
   } = computeOptions(options || {});
 
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
@@ -267,7 +287,13 @@ const generateConfigWithColors = (
       ...(complement ? complementColor : {}),
     };
 
-    shades[steps].forEach((shade) => {
+    let shades = SHADES[steps];
+
+    if (extraShades) {
+      shades = [...shades, ...EXTRA_SHADES];
+    }
+
+    shades.forEach((shade) => {
       const tintSuffix = `${shade * suffixMultiplier}`;
       if (shade === 5) {
         colorTints[tintSuffix] = colorTints.DEFAULT;

@@ -7,6 +7,7 @@ import {
 
 const keys = {
   100: [
+    "50",
     "100",
     "200",
     "300",
@@ -16,6 +17,7 @@ const keys = {
     "700",
     "800",
     "900",
+    "950",
     "DEFAULT",
     "contrast",
     "complement",
@@ -57,6 +59,8 @@ const keys = {
     "DEFAULT",
     "contrast",
     "complement",
+    "0.5",
+    "9.5",
   ],
 };
 
@@ -142,7 +146,7 @@ describe("generateStyleVariables function", () => {
     expect(styles).toBeDefined();
 
     const stylesArray = styles.split(";\n");
-    expect(stylesArray.length).toBe(colorParams.length * 12);
+    expect(stylesArray.length).toBe(colorParams.length * 14);
 
     const PALETTE = stylesArray
       .map((style) => {
@@ -158,7 +162,7 @@ describe("generateStyleVariables function", () => {
     const styles = generateStyleVariables(colorParams);
 
     expect(styles).toBeDefined();
-    expect(styles.split(";\n").length).toBe(12);
+    expect(styles.split(";\n").length).toBe(14);
   });
   it("should generate reactive styles with options", () => {
     const colorParams = { color: "#FF0000", name: "red" };
@@ -167,7 +171,7 @@ describe("generateStyleVariables function", () => {
 
     expect(styles).toBeDefined();
     const stylesArray = styles.split(";\n");
-    expect(stylesArray.length).toBe(12);
+    expect(stylesArray.length).toBe(14);
     stylesArray.forEach((style) => {
       expect(style).toContain(options.variablePrefix);
     });
@@ -179,7 +183,7 @@ describe("generateStyleVariables function", () => {
 
     expect(styles).toBeDefined();
     const stylesArray = styles.split(";\n");
-    expect(stylesArray.length).toBe(10);
+    expect(stylesArray.length).toBe(12);
   });
 
   it("should generate reactive styles with contrast and complement options", () => {
