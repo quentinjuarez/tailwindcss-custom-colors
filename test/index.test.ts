@@ -94,7 +94,7 @@ describe("generateConfig function", () => {
     expect(config).toBeDefined();
     expect(Object.keys(config)).toStrictEqual([colorName]);
     expect(Object.keys(config[colorName])).toStrictEqual(
-      keys[options.suffixMultiplier as 1]
+      keys[options.suffixMultiplier as 1],
     );
   });
 

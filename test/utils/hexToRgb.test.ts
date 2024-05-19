@@ -9,7 +9,7 @@ describe("generateConfig function", () => {
       expect(error).toBeInstanceOf(Error);
       expect(error).toHaveProperty(
         "message",
-        `Invalid hexadecimal color code: ${hex}`
+        `Invalid hexadecimal color code: ${hex}`,
       );
     }
   });

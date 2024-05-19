@@ -1,7 +1,7 @@
 export default function rgbToHsl([r, g, b]: [number, number, number]): [
   number,
   number,
-  number
+  number,
 ] {
   // Normalize RGB values to the range [0, 1]
   const normalizedR = r / 255;

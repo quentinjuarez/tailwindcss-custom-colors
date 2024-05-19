@@ -161,7 +161,7 @@ const variables = generateStyleVariables(
   {
     color: "#FFD534",
     name: "secondary",
-  }
+  },
 );
 ```
 

@@ -79,7 +79,7 @@ interface TailwindColorsConfig {
  */
 const generateConfig = (
   colorNames: string[] | string,
-  options?: Options
+  options?: Options,
 ): TailwindColorsConfig => {
   const {
     suffixMultiplier,
@@ -99,7 +99,7 @@ const generateConfig = (
     const defaultColor = {
       DEFAULT: `rgb(var(${variableName(
         colorName,
-        variablePrefix
+        variablePrefix,
       )}) / <alpha-value>)`,
     };
 
@@ -107,7 +107,7 @@ const generateConfig = (
       contrast: `rgb(var(${variableName(
         colorName,
         variablePrefix,
-        "contrast"
+        "contrast",
       )}) / <alpha-value>)`,
     };
 
@@ -115,7 +115,7 @@ const generateConfig = (
       complement: `rgb(var(${variableName(
         colorName,
         variablePrefix,
-        "complement"
+        "complement",
       )}) / <alpha-value>)`,
     };
 
@@ -136,7 +136,7 @@ const generateConfig = (
       colorTints[tintSuffix] = `rgb(var(${variableName(
         colorName,
         variablePrefix,
-        tintSuffix
+        tintSuffix,
       )}) / <alpha-value>)`;
     });
 
@@ -159,7 +159,7 @@ interface ColorParams {
  */
 const generateStyleVariables = (
   colorParams: ColorParams[] | ColorParams,
-  options?: Options
+  options?: Options,
 ): string => {
   const {
     suffixMultiplier,
@@ -183,13 +183,13 @@ const generateStyleVariables = (
     const contrastTintColor = [
       `${variableName(name, variablePrefix, "contrast")}: ${contrastCalc(
         hslColor,
-        classification
+        classification,
       )}`,
     ];
     const complementTintColor = [
       `${variableName(name, variablePrefix, "complement")}: ${complementCalc(
         hslColor,
-        classification
+        classification,
       )}`,
     ];
 
@@ -210,24 +210,24 @@ const generateStyleVariables = (
       if (shade === 5) {
         tintsString.push(
           `${variableName(name, variablePrefix, tintSuffix)}: ${hexToRgbString(
-            color
-          )}`
+            color,
+          )}`,
         );
       } else if (shade < 5) {
         let ratio = round(-0.2 * shade + 1);
         tintsString.push(
           `${variableName(name, variablePrefix, tintSuffix)}: ${lighten(
             hslColor,
-            ratio
-          )}`
+            ratio,
+          )}`,
         );
       } else {
         let ratio = round(0.2 * shade - 1.0);
         tintsString.push(
           `${variableName(name, variablePrefix, tintSuffix)}: ${darken(
             hslColor,
-            ratio
-          )}`
+            ratio,
+          )}`,
         );
       }
     });
@@ -245,7 +245,7 @@ const generateStyleVariables = (
  */
 const generateConfigWithColors = (
   colorParams: ColorParams[] | ColorParams,
-  options?: Options
+  options?: Options,
 ): TailwindColorsConfig => {
   const {
     suffixMultiplier,
@@ -271,13 +271,13 @@ const generateConfigWithColors = (
     const contrastColor = {
       contrast: `rgb(${contrastCalc(
         hslColor,
-        classification
+        classification,
       )} / <alpha-value>)`,
     };
     const complementColor = {
       complement: `rgb(${complementCalc(
         hslColor,
-        classification
+        classification,
       )} / <alpha-value>)`,
     };
 
@@ -301,13 +301,13 @@ const generateConfigWithColors = (
         let ratio = round(-0.2 * shade + 1);
         colorTints[tintSuffix] = `rgb(${lighten(
           hslColor,
-          ratio
+          ratio,
         )} / <alpha-value>)`;
       } else {
         let ratio = round(0.2 * shade - 1.0);
         colorTints[tintSuffix] = `rgb(${darken(
           hslColor,
-          ratio
+          ratio,
         )} / <alpha-value>)`;
       }
     });

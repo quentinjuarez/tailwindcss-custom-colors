@@ -15,7 +15,7 @@ export default function hexToRgb(hex: string): [number, number, number] {
 export function rgbToString([r, g, b]: [
   number,
   number,
-  number
+  number,
 ]): `${number} ${number} ${number}` {
   return `${r} ${g} ${b}`;
 }

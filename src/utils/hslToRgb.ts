@@ -12,7 +12,7 @@ const hueToRgb = (p: number, q: number, t: number) => {
 export default function hslToRgb([h, s, l]: [number, number, number]): [
   number,
   number,
-  number
+  number,
 ] {
   h /= 360;
   l = round(l);
