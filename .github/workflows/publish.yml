@@ -42,10 +42,7 @@ jobs:
           NPM_CONFIG_GIT_TAG_VERSION: "true"
 
       - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.REPO_TOKEN }}
-          branch: ${{ github.ref }}
+        run: git push --follow-tags
 
       - name: Publish to npm
         run: npm publish
