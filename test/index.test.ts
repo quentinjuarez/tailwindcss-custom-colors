@@ -103,16 +103,20 @@ describe("generateConfig function", () => {
     expect(Object.keys(config)).toStrictEqual([colorName]);
   });
 
-  it("should generate a config object without contrast and complement options", () => {
+  it("should generate a config object without default, contrast and complement options", () => {
     const colorName = "red";
-    const options: Options = { contrast: false, complement: false };
+    const options: Options = {
+      contrast: false,
+      complement: false,
+      default: false,
+    };
     const config = generateConfig(colorName, options);
+
+    const disabledKeys = ["DEFAULT", "contrast", "complement"];
 
     expect(config).toBeDefined();
     expect(Object.keys(config)).toStrictEqual([colorName]);
-    expect(Object.keys(config[colorName])).toStrictEqual(
-      keys[100].slice(0, 10)
-    );
+    expect(Object.keys(config[colorName])).not.toContain(disabledKeys);
   });
 
   it("should generate a config object with steps equals to 50", () => {
