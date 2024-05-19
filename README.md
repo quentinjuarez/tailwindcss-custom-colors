@@ -29,6 +29,41 @@ import { generateConfig } from "tailwindcss-custom-colors";
 import { generateStyleVariables } from "tailwindcss-custom-colors";
 ```
 
+### Options
+
+The `Options` interface allows you to customize the behavior of the package. Below are the available options and their default values.
+
+#### Available Options
+
+- `suffixMultiplier` (optional): Determines the multiplier for suffixes. Possible values are `100`, `10`, or `1`. Default is `100`.
+- `variablePrefix` (optional): Specifies a prefix for variable names. Default is `undefined`.
+- `contrast` (optional): If set to `true`, calculates the contrast. Default is `true`.
+- `complement` (optional): If set to `true`, calculates the complementary color. Default is `true`.
+- `classification` (optional): An object containing color classifications for light and dark themes. Default is `{ light: "#FFFFFF", dark: "#000000" }`.
+  - `light`: Hex color for light theme. Default is `"#FFFFFF"`.
+  - `dark`: Hex color for dark theme. Default is `"#000000"`.
+- `steps` (optional): Determines the step values for shades. Possible values are `100` or `50`. Default is `100`.
+- `default` (optional): If set to `true`, uses the default configuration. Default is `true`.
+
+#### Default Options
+
+The `defaultOptions` object represents the default configuration for the package:
+
+```typescript
+const defaultOptions: DefaultOptions = {
+  suffixMultiplier: 100,
+  variablePrefix: undefined,
+  contrast: true,
+  complement: true,
+  classification: {
+    light: "#FFFFFF",
+    dark: "#000000",
+  },
+  steps: 100,
+  default: true,
+};
+```
+
 ### generateConfig()
 
 ```js
