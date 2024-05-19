@@ -52,6 +52,15 @@ const defaultOptions: DefaultOptions = {
   steps: 100,
 };
 
+const computeOptions = (options: Options) => {
+  const computedOptions = {
+    ...defaultOptions,
+    ...options,
+  };
+
+  return computedOptions;
+};
+
 interface TailwindColorsConfig {
   [key: string]: Record<string, string>;
 }
@@ -66,10 +75,8 @@ const generateConfig = (
   colorNames: string[] | string,
   options?: Options
 ): TailwindColorsConfig => {
-  const { suffixMultiplier, variablePrefix, contrast, complement, steps } = {
-    ...defaultOptions,
-    ...(options || {}),
-  };
+  const { suffixMultiplier, variablePrefix, contrast, complement, steps } =
+    computeOptions(options || {});
 
   const colors = Array.isArray(colorNames) ? colorNames : [colorNames];
 
@@ -137,10 +144,8 @@ const generateStyleVariables = (
     complement,
     classification,
     steps,
-  } = {
-    ...defaultOptions,
-    ...(options || {}),
-  };
+  } = computeOptions(options || {});
+
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
 
   const styles = colors.map(({ color, name }) => {
@@ -214,10 +219,8 @@ const generateConfigWithColors = (
     complement,
     classification,
     steps,
-  } = {
-    ...defaultOptions,
-    ...(options || {}),
-  };
+  } = computeOptions(options || {});
+
   const colors = Array.isArray(colorParams) ? colorParams : [colorParams];
 
   const config: TailwindColorsConfig = {};
