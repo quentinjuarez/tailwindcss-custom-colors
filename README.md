@@ -156,11 +156,17 @@ yarn test:watch
 
 ## Releasing
 
-Bump the version in `package.json`, then:
+Publishing is triggered by a tag, never by a push to `main`.
 
 ```bash
-yarn release     # runs yarn verify, then yarn npm publish
+yarn release           # verify, bump, commit, tag. Defaults to patch
+yarn release minor     # or minor / major
+git push --follow-tags # pushing the tag is what publishes
 ```
+
+The tag push runs `.github/workflows/release.yml`, which re-runs `yarn verify`
+on a clean checkout, checks that the tag matches the version in
+`package.json`, and only then publishes to npm.
 
 ## License
 
