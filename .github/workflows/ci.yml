@@ -81,9 +81,12 @@ jobs:
           # is `current` there is no new commit, and git would then report
           # everything up to date and never send the tag.
           git push origin "HEAD:${GITHUB_REF_NAME}"
-          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
-            echo "Tag v$VERSION already exists locally, not recreating it."
+          # Checked against the remote, not locally: checkout does not fetch
+          # tags, so a `current` retry would otherwise recreate a tag that
+          # already exists upstream and fail to push it.
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION is already on the remote, leaving it alone."
           else
             git tag -a "v$VERSION" -m "v$VERSION"
+            git push origin "refs/tags/v$VERSION"
           fi
-          git push origin "refs/tags/v$VERSION"
