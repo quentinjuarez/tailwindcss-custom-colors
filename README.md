@@ -1,121 +1,55 @@
+# tailwindcss-custom-colors
+
+Generate a full Tailwind CSS shade scale, the matching CSS variables and
+automatic contrast colors from a single hex color.
+
+[![npm version](https://img.shields.io/npm/v/tailwindcss-custom-colors)](https://www.npmjs.com/package/tailwindcss-custom-colors)
+[![npm downloads](https://img.shields.io/npm/dm/tailwindcss-custom-colors)](https://www.npmjs.com/package/tailwindcss-custom-colors)
+[![license](https://img.shields.io/npm/l/tailwindcss-custom-colors)](LICENSE)
+
+You declare `primary` once. The package gives you `primary-50` through
+`primary-950`, plus `primary`, `primary-contrast` and `primary-complement`, all
+wired to CSS variables so a theme can be swapped at runtime.
+
 ## Installation
 
 ```bash
-# With npm
-npm i tailwindcss-custom-colors@latest
-
-# With yarn
-yarn add tailwindcss-custom-colors@latest
+yarn add tailwindcss-custom-colors
+# or
+npm install tailwindcss-custom-colors
 ```
 
-[![npm version](https://badge.fury.io/js/tailwindcss-custom-colors.svg)](https://badge.fury.io/js/tailwindcss-custom-colors)
-
-<!-- ![NPM](https://img.shields.io/npm/l/tailwindcss-custom-colors)
-![GitHub Repo stars](https://img.shields.io/github/stars/ibodev1/tailwindcss-custom-colors?style=social)
-![node-current](https://img.shields.io/node/v/tailwindcss-custom-colors)
-![GitHub last commit](https://img.shields.io/github/last-commit/ibodev1/tailwindcss-custom-colors)
-![npm](https://img.shields.io/npm/dw/tailwindcss-custom-colors)
-![GitHub top language](https://img.shields.io/github/languages/top/ibodev1/tailwindcss-custom-colors) -->
+The package is published as CommonJS so it can be required from a
+`tailwind.config.js`.
 
 ## Usage
 
-### Import
+Two functions, used together. `generateConfig` produces the Tailwind color
+config, which references CSS variables. `generateStyleVariables` produces the
+values for those variables.
 
-```js
-import { generateConfig } from "tailwindcss-custom-colors";
-```
-
-```js
-import { generateStyleVariables } from "tailwindcss-custom-colors";
-```
-
-### Options
-
-The `Options` interface allows you to customize the behavior of the package. Below are the available options and their default values.
-
-#### Available Options
-
-- `suffixMultiplier` (optional): Determines the multiplier for suffixes. Possible values are `100`, `10`, or `1`. Default is `100`.
-- `variablePrefix` (optional): Specifies a prefix for variable names. Default is `undefined`.
-- `contrast` (optional): If set to `true`, calculates the contrast. Default is `true`.
-- `complement` (optional): If set to `true`, calculates the complementary color. Default is `true`.
-- `classification` (optional): An object containing color classifications for light and dark themes. Default is `{ light: "#FFFFFF", dark: "#000000" }`.
-  - `light`: Hex color for light theme. Default is `"#FFFFFF"`.
-  - `dark`: Hex color for dark theme. Default is `"#000000"`.
-- `steps` (optional): Determines the step values for shades. Possible values are `100` or `50`. Default is `100`.
-- `default` (optional): If set to `true`, uses the default configuration. Default is `true`.
-
-#### Default Options
-
-The `defaultOptions` object represents the default configuration for the package:
-
-```typescript
-const defaultOptions: DefaultOptions = {
-  suffixMultiplier: 100,
-  variablePrefix: undefined,
-  contrast: true,
-  complement: true,
-  classification: {
-    light: "#FFFFFF",
-    dark: "#000000",
-  },
-  steps: 100,
-  default: true,
-};
-```
-
-### generateConfig()
-
-```js
-const extendedColors = generateConfig(colorNames, options);
-```
-
-#### The generateConfig function takes the following parameters:
-
-- `colorNames`: An array of color names or a single color name.
-- `options` (optional): An object of options that allows you to customize the generated colors. The available options are `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`) and `variablePrefix` (default: `undefined`), which determines the prefix for the css variable name, none by default.
-
-The function returns a config object for Tailwind CSS with the specified color names and their respective tints.
-
-### generateStyleVariables()
-
-```js
-const variables = generateStyleVariables(colorParams, options);
-```
-
-#### The generateStyleVariables function takes the following parameters:
-
-- `colorParams`: An array of color params or a single color params including a color (hex) and a name.
-- `options` (optional): An object of options that allows you to customize the generated colors. The available options are `suffixMultiplier` (default: `100`), which determines the suffix used to generate variables names (e.g `[1, 10, 100]`) and `variablePrefix` (default: `undefined`), which determines the prefix for the css variable name, none by default.
-
-## Example
-
-Extend your tailwind config
-
-_tailwind.config.js_
+### Tailwind config
 
 ```js
 /** @type {import('tailwindcss').Config} */
-import { generateConfig } from "tailwindcss-custom-colors";
-
-const extendedColors = generateConfig(["primary", "secondary"]);
+const { generateConfig } = require('tailwindcss-custom-colors');
 
 module.exports = {
-  content: ["./src/**/*.{index,vue,js,ts,jsx,tsx}"],
+  content: ['./src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      colors: extendedColors,
+      colors: generateConfig(['primary', 'secondary']),
     },
   },
-  plugins: [],
 };
 ```
 
-#### Output for `extendedColors`:
+`generateConfig(['primary'])` returns:
 
 ```json
 {
   "primary": {
+    "50": "rgb(var(--primary-50) / <alpha-value>)",
     "100": "rgb(var(--primary-100) / <alpha-value>)",
     "200": "rgb(var(--primary-200) / <alpha-value>)",
     "300": "rgb(var(--primary-300) / <alpha-value>)",
@@ -125,52 +59,38 @@ module.exports = {
     "700": "rgb(var(--primary-700) / <alpha-value>)",
     "800": "rgb(var(--primary-800) / <alpha-value>)",
     "900": "rgb(var(--primary-900) / <alpha-value>)",
+    "950": "rgb(var(--primary-950) / <alpha-value>)",
     "DEFAULT": "rgb(var(--primary) / <alpha-value>)",
     "contrast": "rgb(var(--primary-contrast) / <alpha-value>)",
     "complement": "rgb(var(--primary-complement) / <alpha-value>)"
-  },
-  "secondary": {
-    "100": "rgb(var(--secondary-100) / <alpha-value>)",
-    "200": "rgb(var(--secondary-200) / <alpha-value>)",
-    "300": "rgb(var(--secondary-300) / <alpha-value>)",
-    "400": "rgb(var(--secondary-400) / <alpha-value>)",
-    "500": "rgb(var(--secondary-500) / <alpha-value>)",
-    "600": "rgb(var(--secondary-600) / <alpha-value>)",
-    "700": "rgb(var(--secondary-700) / <alpha-value>)",
-    "800": "rgb(var(--secondary-800) / <alpha-value>)",
-    "900": "rgb(var(--secondary-900) / <alpha-value>)",
-    "DEFAULT": "rgb(var(--secondary) / <alpha-value>)",
-    "contrast": "rgb(var(--secondary-contrast) / <alpha-value>)",
-    "complement": "rgb(var(--secondary-complement) / <alpha-value>)"
   }
 }
 ```
 
-### Variables
+Because every shade goes through a CSS variable, `bg-primary-500` follows
+whatever `--primary-500` is set to, and a whole theme can be re-skinned by
+rewriting the variables.
 
-Generate css variables
+### CSS variables
+
+Pass an array of `{ color, name }` pairs. A single object also works.
 
 ```js
-import { generateStyleVariables } from "tailwindcss-custom-colors";
+const { generateStyleVariables } = require('tailwindcss-custom-colors');
 
-const variables = generateStyleVariables(
-  {
-    color: "#940BDF",
-    name: "primary",
-  },
-  {
-    color: "#FFD534",
-    name: "secondary",
-  },
-);
+const variables = generateStyleVariables([
+  { color: '#940BDF', name: 'primary' },
+  { color: '#FFD534', name: 'secondary' },
+]);
 ```
 
-#### Output for `variables`:
+Which returns:
 
 ```css
 --primary: 148 11 223;
 --primary-contrast: 255 255 255;
 --primary-complement: 0 0 0;
+--primary-50: 231 192 252;
 --primary-100: 223 172 251;
 --primary-200: 207 128 249;
 --primary-300: 188 80 247;
@@ -180,29 +100,68 @@ const variables = generateStyleVariables(
 --primary-700: 91 6 136;
 --primary-800: 58 4 88;
 --primary-900: 29 2 44;
+--primary-950: 16 1 24;
 --secondary: 255 213 52;
 --secondary-contrast: 0 0 0;
 --secondary-complement: 255 255 255;
---secondary-100: 255 263 296;
---secondary-200: 255 251 235;
---secondary-300: 255 239 173;
---secondary-400: 255 226 112;
---secondary-500: 255 213 52;
---secondary-600: 245 196 0;
---secondary-700: 184 147 0;
---secondary-800: 122 98 0;
---secondary-900: 61 49 0;
+/* and --secondary-50 through --secondary-950, same as above */
 ```
 
-### Import variables
+Inject them wherever your theme lives:
 
 ```js
-const style = document.createElement("style");
-style.innerHTML = `
-    @layer base {
-      :root {
-        ${variables}
-      }
-    }`;
+const style = document.createElement('style');
+style.innerHTML = `@layer base { :root { ${variables} } }`;
 document.head.appendChild(style);
 ```
+
+## API
+
+### `generateConfig(names, options?)`
+
+`names` is a color name or an array of them. Returns a Tailwind `colors` object
+whose every entry points at a CSS variable.
+
+### `generateConfigWithColors(colorParams, options?)`
+
+Same shape as `generateConfig`, but takes `{ color, name }` pairs and inlines the
+computed `rgb()` values instead of referencing CSS variables. Use it when you do
+not want a runtime-swappable theme.
+
+### `generateStyleVariables(colorParams, options?)`
+
+Takes `{ color, name }` pairs and returns the CSS variable declarations as a
+string, separated by `;`.
+
+## Options
+
+| Option             | Type                              | Default                                 | What it does                                                                     |
+| ------------------ | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| `suffixMultiplier` | `100 \| 10 \| 1`                  | `100`                                   | Scale of the shade suffixes, so `500` becomes `50` or `5`                        |
+| `variablePrefix`   | `string`                          | `undefined`                             | Prefix for generated variable names, for example `app` gives `--app-primary-500` |
+| `contrast`         | `boolean`                         | `true`                                  | Emit a `contrast` color, readable on top of the base color                       |
+| `complement`       | `boolean`                         | `true`                                  | Emit a `complement` color, the inverse of `contrast`                             |
+| `classification`   | `{ light: string, dark: string }` | `{ light: '#FFFFFF', dark: '#000000' }` | The two colors `contrast` and `complement` pick between                          |
+| `steps`            | `100 \| 50`                       | `100`                                   | `50` adds the half steps, `150`, `250` and so on                                 |
+| `default`          | `boolean`                         | `true`                                  | Emit the unsuffixed `DEFAULT` entry                                              |
+| `extraShades`      | `boolean`                         | `true`                                  | Emit the outer `50` and `950` shades                                             |
+
+## Development
+
+```bash
+yarn install
+yarn verify      # lint, format check, typecheck, tests, build
+yarn test:watch
+```
+
+## Releasing
+
+Bump the version in `package.json`, then:
+
+```bash
+yarn release     # runs yarn verify, then yarn npm publish
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

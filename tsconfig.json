@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
-    "target": "esnext",
+    // CommonJS on purpose: this package is imported from tailwind.config.js
+    // files, which are still CJS in most projects. Switching to ESM like the
+    // sibling packages would break every one of them.
+    "target": "ES2022",
     "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
+    "moduleResolution": "Node",
     "declaration": true,
-    "sourceMap": true
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "rootDir": "src",
+    "outDir": "dist"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"]
 }

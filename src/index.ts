@@ -3,11 +3,11 @@ import {
   lighten,
   contrast as contrastCalc,
   complement as complementCalc,
-} from "./utils/chroma";
-import { hexToRgbString } from "./utils/hexToRgb";
-import hexToHsl from "./utils/hexToHsl";
-import round from "./utils/round";
-import variableName from "./utils/variableName";
+} from './utils/chroma';
+import hexToHsl from './utils/hexToHsl';
+import { hexToRgbString } from './utils/hexToRgb';
+import round from './utils/round';
+import variableName from './utils/variableName';
 
 const SHADES = {
   100: [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -36,8 +36,8 @@ interface DefaultOptions {
   contrast: true;
   complement: true;
   classification: {
-    light: "#FFFFFF";
-    dark: "#000000";
+    light: '#FFFFFF';
+    dark: '#000000';
   };
   steps: 100;
   default: true;
@@ -50,8 +50,8 @@ const defaultOptions: DefaultOptions = {
   contrast: true,
   complement: true,
   classification: {
-    light: "#FFFFFF",
-    dark: "#000000",
+    light: '#FFFFFF',
+    dark: '#000000',
   },
   steps: 100,
   default: true,
@@ -107,7 +107,7 @@ const generateConfig = (
       contrast: `rgb(var(${variableName(
         colorName,
         variablePrefix,
-        "contrast",
+        'contrast',
       )}) / <alpha-value>)`,
     };
 
@@ -115,7 +115,7 @@ const generateConfig = (
       complement: `rgb(var(${variableName(
         colorName,
         variablePrefix,
-        "complement",
+        'complement',
       )}) / <alpha-value>)`,
     };
 
@@ -181,13 +181,13 @@ const generateStyleVariables = (
       `${variableName(name, variablePrefix)}: ${hexToRgbString(color)}`,
     ];
     const contrastTintColor = [
-      `${variableName(name, variablePrefix, "contrast")}: ${contrastCalc(
+      `${variableName(name, variablePrefix, 'contrast')}: ${contrastCalc(
         hslColor,
         classification,
       )}`,
     ];
     const complementTintColor = [
-      `${variableName(name, variablePrefix, "complement")}: ${complementCalc(
+      `${variableName(name, variablePrefix, 'complement')}: ${complementCalc(
         hslColor,
         classification,
       )}`,
@@ -231,10 +231,10 @@ const generateStyleVariables = (
         );
       }
     });
-    return tintsString.join(";\n");
+    return tintsString.join(';\n');
   });
 
-  return styles.join(";\n");
+  return styles.join(';\n');
 };
 
 /**
@@ -247,9 +247,10 @@ const generateConfigWithColors = (
   colorParams: ColorParams[] | ColorParams,
   options?: Options,
 ): TailwindColorsConfig => {
+  // No variablePrefix here: this builds the Tailwind config with plain rgb()
+  // values, it never emits CSS variable names.
   const {
     suffixMultiplier,
-    variablePrefix,
     contrast,
     complement,
     classification,

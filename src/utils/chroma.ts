@@ -1,5 +1,5 @@
-import hexToRgb, { rgbToString } from "./hexToRgb";
-import hslToRgb from "./hslToRgb";
+import hexToRgb, { rgbToString } from './hexToRgb';
+import hslToRgb from './hslToRgb';
 
 function darkenHsl(hsl: [number, number, number], val: number) {
   hsl = [...hsl];
