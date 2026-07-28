@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Escape hatch: re-publish the version main declares, without cutting a new
+  # tag, when a release failed for a reason outside the code (an expired token).
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -22,6 +25,7 @@ jobs:
       - run: yarn verify
 
       - name: Check the tag matches package.json
+        if: github.ref_type == 'tag'
         run: |
           tagged="${GITHUB_REF_NAME#v}"
           declared="$(node -p 'require("./package.json").version')"
