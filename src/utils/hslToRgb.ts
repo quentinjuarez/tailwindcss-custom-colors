@@ -1,4 +1,4 @@
-import round from "./round";
+import round from './round';
 
 const hueToRgb = (p: number, q: number, t: number) => {
   if (t < 0) t += 1;
@@ -15,7 +15,10 @@ export default function hslToRgb([h, s, l]: [number, number, number]): [
   number,
 ] {
   h /= 360;
-  l = round(l);
+  // Lightening a bright color can push l past 1, which would yield rgb
+  // components above 255. Saturation and lightness are both defined on [0, 1].
+  s = Math.min(1, Math.max(0, s));
+  l = round(Math.min(1, Math.max(0, l)));
 
   let r, g, b;
 
