@@ -4,10 +4,21 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: 'Force a release regardless of the commit messages'
+        type: choice
+        default: none
+        options: [none, current, patch, minor, major]
 
+# One job, so the setup and `yarn verify` are defined once and run once. A push
+# to main that carries a releasing commit continues into the publish steps.
 jobs:
-  check:
+  ci:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,3 +27,63 @@ jobs:
       - run: corepack enable
       - run: yarn install --immutable
       - run: yarn verify
+
+      # Conventional Commits decide the version: feat -> minor, fix and perf ->
+      # patch, a `!` or a BREAKING CHANGE footer -> major, anything else -> no
+      # release. Messages are passed as JSON through the environment rather than
+      # interpolated into the shell.
+      - name: Decide the release
+        id: decide
+        if: github.event_name != 'pull_request'
+        env:
+          COMMITS: ${{ toJSON(github.event.commits.*.message) }}
+          FORCED: ${{ inputs.strategy }}
+        run: node scripts/decide-bump.mjs >> "$GITHUB_OUTPUT"
+
+      - name: Bump the version
+        id: version
+        if: steps.decide.outputs.strategy != '' && steps.decide.outputs.strategy != 'none'
+        env:
+          STRATEGY: ${{ steps.decide.outputs.strategy }}
+        run: |
+          if [ "$STRATEGY" = "current" ]; then
+            # Publishing package.json as it stands: a first release, or a retry
+            # after a publish that failed on something other than the code.
+            version="$(node -p 'require("./package.json").version')"
+          else
+            version="$(node scripts/bump-version.mjs "$STRATEGY")"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$version ($STRATEGY)"
+
+      # npm first, deliberately. Publishing is the irreversible half, so if the
+      # token is wrong nothing has been written to main and no tag exists yet.
+      - name: Publish to npm
+        if: steps.version.outputs.version != ''
+        run: yarn npm publish --access public
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+
+      - name: Commit and tag the release
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "quentinjuarez"
+          git config user.email "quentin.juarez@hotmail.fr"
+          if ! git diff --quiet -- package.json; then
+            git add package.json
+            # `release:` maps to no release, so this commit cannot loop back in.
+            # A push made with GITHUB_TOKEN does not start a new run either.
+            git commit -q -m "release: v$VERSION"
+          fi
+          # Pushed explicitly rather than with --follow-tags: when the strategy
+          # is `current` there is no new commit, and git would then report
+          # everything up to date and never send the tag.
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "Tag v$VERSION already exists locally, not recreating it."
+          else
+            git tag -a "v$VERSION" -m "v$VERSION"
+          fi
+          git push origin "refs/tags/v$VERSION"

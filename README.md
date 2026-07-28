@@ -156,17 +156,27 @@ yarn test:watch
 
 ## Releasing
 
-Publishing is triggered by a tag, never by a push to `main`.
+Releases are driven by the commit messages. Push to `main` and CI decides
+whether to publish, from the Conventional Commit prefixes in that push:
+
+| Commit                                           | Release |
+| ------------------------------------------------ | ------- |
+| `feat!:`, or a `BREAKING CHANGE:` footer         | major   |
+| `feat:`                                          | minor   |
+| `fix:`, `perf:`                                  | patch   |
+| `chore:`, `docs:`, `ci:`, `test:`, anything else | none    |
+
+The highest bump in the push wins. CI runs `yarn verify`, publishes to npm,
+then commits the version bump and tags it. Nothing to run by hand, and no
+version is bumped by a commit that does not change the published code.
+
+To publish without a qualifying commit, run the workflow manually and pick a
+strategy. `current` publishes the version already in `package.json`, which is
+what a first release or a retry after a credentials failure needs.
 
 ```bash
-yarn release           # verify, bump, commit, tag. Defaults to patch
-yarn release minor     # or minor / major
-git push --follow-tags # pushing the tag is what publishes
+gh workflow run CI --field strategy=minor
 ```
-
-The tag push runs `.github/workflows/release.yml`, which re-runs `yarn verify`
-on a clean checkout, checks that the tag matches the version in
-`package.json`, and only then publishes to npm.
 
 ## License
 

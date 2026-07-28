@@ -35,8 +35,7 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt . '!**/global.d.ts'",
     "format:check": "oxfmt --check . '!**/global.d.ts'",
-    "verify": "yarn lint && yarn format:check && yarn typecheck && yarn test && yarn build",
-    "release": "bash scripts/release.sh"
+    "verify": "yarn lint && yarn format:check && yarn typecheck && yarn test && yarn build"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
