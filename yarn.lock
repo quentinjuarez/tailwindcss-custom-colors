@@ -870,6 +870,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"culori@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "culori@npm:4.0.2"
+  checksum: 2edeba0eb666ae55dd6cc95b124f3a458283689b18bdf5319b155e1dc2c477bbfcc51d0fdbed06e1b80343e291d9e24ff2b88f32a9d3767fd6411ecdb8befdc3
+  languageName: node
+  linkType: hard
+
 "debug@npm:4, debug@npm:^4.3.4":
   version: 4.3.4
   resolution: "debug@npm:4.3.4"
@@ -2006,12 +2013,21 @@ __metadata:
   dependencies:
     "@types/node": ^26.0.0
     "@vitest/coverage-v8": ^4.0.18
+    culori: ^4.0.2
     oxfmt: ^0.59.0
     oxlint: ^1.74.0
+    tailwindcss: ^4.3.5
     typescript: ^5.9.3
     vitest: ^4.0.18
   languageName: unknown
   linkType: soft
+
+"tailwindcss@npm:^4.3.5":
+  version: 4.3.5
+  resolution: "tailwindcss@npm:4.3.5"
+  checksum: 849f4f3758b57be77229d9aeb5707e9a86f1cce6a12e9f5dc5d2b9c5ade0806c0d616ec96f1edc5e88e159baa805b195e8d2d8309970faaf2704a814ff07462c
+  languageName: node
+  linkType: hard
 
 "tar@npm:^6.1.11, tar@npm:^6.1.2":
   version: 6.2.1
