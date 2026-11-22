@@ -225,3 +225,62 @@ describe('generateConfigWithColors function', () => {
     expect(Object.keys(config[colorParams.name])).toStrictEqual(keys[100]);
   });
 });
+
+describe('input validation', () => {
+  const injection = 'a: 0; } body { display:none';
+
+  it('rejects injected names and prefixes in generateStyleVariables', () => {
+    expect(() =>
+      generateStyleVariables({ color: '#fff000', name: injection }),
+    ).toThrow(/Invalid color name/);
+    expect(() =>
+      generateStyleVariables(
+        { color: '#fff000', name: 'primary' },
+        { variablePrefix: injection },
+      ),
+    ).toThrow(/Invalid variable prefix/);
+  });
+
+  it('rejects injected names and prefixes in generateConfig', () => {
+    expect(() => generateConfig(injection)).toThrow(/Invalid color name/);
+    expect(() =>
+      generateConfig('primary', { variablePrefix: injection }),
+    ).toThrow(/Invalid variable prefix/);
+  });
+
+  it('rejects injected names in generateConfigWithColors', () => {
+    expect(() =>
+      generateConfigWithColors({ color: '#fff000', name: injection }),
+    ).toThrow(/Invalid color name/);
+  });
+
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'rejects the reserved name %s',
+    (name) => {
+      expect(() => generateConfig(name)).toThrow(/Reserved color name/);
+      expect(() =>
+        generateConfigWithColors({ color: '#fff000', name }),
+      ).toThrow(/Reserved color name/);
+    },
+  );
+
+  it('keeps the README output unchanged', () => {
+    const variables = generateStyleVariables([
+      { color: '#940BDF', name: 'primary' },
+      { color: '#FFD534', name: 'secondary' },
+    ]);
+    expect(variables).toContain('--primary: 148 11 223;\n');
+    expect(variables).toContain('--primary-contrast: 255 255 255;\n');
+    expect(variables).toContain('--primary-50: 231 192 252;\n');
+    expect(variables).toContain('--primary-600: 120 8 180;\n');
+    expect(variables).toContain('--primary-950: 16 1 24;\n');
+    expect(variables).toContain('--secondary: 255 213 52;\n');
+    expect(variables).toContain('--secondary-contrast: 0 0 0;\n');
+    expect(generateConfig(['primary']).primary['500']).toBe(
+      'rgb(var(--primary-500) / <alpha-value>)',
+    );
+    expect(
+      generateConfig('primary', { variablePrefix: 'app' }).primary.DEFAULT,
+    ).toBe('rgb(var(--app-primary) / <alpha-value>)');
+  });
+});

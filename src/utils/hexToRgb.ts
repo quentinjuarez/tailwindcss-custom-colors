@@ -1,5 +1,5 @@
 export default function hexToRgb(hex: string): [number, number, number] {
-  const hexString = hex.replace('#', '');
+  const hexString = hex.startsWith('#') ? hex.slice(1) : hex;
 
   const validHexRegExp = /^[0-9A-Fa-f]{6}$/;
   if (!validHexRegExp.test(hexString)) {
