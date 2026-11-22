@@ -7,7 +7,10 @@ import {
 import hexToHsl from './utils/hexToHsl';
 import { hexToRgbString } from './utils/hexToRgb';
 import round from './utils/round';
-import variableName from './utils/variableName';
+import variableName, {
+  assertConfigKey,
+  assertVariablePrefix,
+} from './utils/variableName';
 
 const SHADES = {
   100: [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -93,9 +96,12 @@ const generateConfig = (
 
   const colors = Array.isArray(colorNames) ? colorNames : [colorNames];
 
+  if (variablePrefix) assertVariablePrefix(variablePrefix);
+
   const config: TailwindColorsConfig = {};
 
   colors.forEach((colorName) => {
+    assertConfigKey(colorName);
     const defaultColor = {
       DEFAULT: `rgb(var(${variableName(
         colorName,
@@ -264,6 +270,7 @@ const generateConfigWithColors = (
   const config: TailwindColorsConfig = {};
 
   colors.forEach(({ color, name }) => {
+    assertConfigKey(name);
     const hslColor = hexToHsl(color);
 
     const defaultColor = {

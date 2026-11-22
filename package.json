@@ -38,7 +38,7 @@
     "verify": "yarn lint && yarn format:check && yarn typecheck && yarn test && yarn build"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "^4.0.18",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
