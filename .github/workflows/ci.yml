@@ -41,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -77,13 +78,12 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Releasing v$version ($STRATEGY)"
 
-      # npm first, deliberately. Publishing is the irreversible half, so if the
-      # token is wrong nothing has been written to main and no tag exists yet.
+      # npm first, deliberately. Publishing is the irreversible half, so if
+      # authentication fails nothing has been written to main and no tag
+      # exists yet.
       - name: Publish to npm
         if: steps.version.outputs.version != ''
-        run: yarn npm publish --access public
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Commit and tag the release
         if: steps.version.outputs.version != ''
