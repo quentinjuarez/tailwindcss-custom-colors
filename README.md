@@ -3,6 +3,8 @@
 One color in, a complete Tailwind CSS 4 theme out: an OKLCH shade scale, a dark
 scale, a contrast color, all behind CSS variables you can swap at runtime.
 
+[Try it live](https://quentinjuarez.github.io/tailwindcss-custom-colors/)
+
 ![Shade scales from 50 to 950 that createTheme generates for four brand colors, in light and dark mode](assets/scales.svg)
 
 [![npm version](https://img.shields.io/npm/v/tailwindcss-custom-colors)](https://www.npmjs.com/package/tailwindcss-custom-colors)
