@@ -23,9 +23,7 @@
     "type": "git",
     "url": "git+https://github.com/quentinjuarez/tailwindcss-custom-colors.git"
   },
-  "bin": {
-    "tailwindcss-custom-colors": "./dist/esm/bin.js"
-  },
+  "bin": "./dist/esm/bin.js",
   "files": [
     "dist",
     "MIGRATION.md"

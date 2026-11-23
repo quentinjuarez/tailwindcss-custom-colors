@@ -2019,6 +2019,8 @@ __metadata:
     tailwindcss: ^4.3.5
     typescript: ^5.9.3
     vitest: ^4.0.18
+  bin:
+    tailwindcss-custom-colors: ./dist/esm/bin.js
   languageName: unknown
   linkType: soft
 
