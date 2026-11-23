@@ -1,18 +1,15 @@
 {
   "compilerOptions": {
-    // CommonJS on purpose: this package is imported from tailwind.config.js
-    // files, which are still CJS in most projects. Switching to ESM like the
-    // sibling packages would break every one of them.
     "target": "ES2022",
-    "module": "commonjs",
-    "moduleResolution": "Node",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "strict": true,
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist/esm"
   },
   "include": ["src"],
   "exclude": ["dist", "node_modules"]
