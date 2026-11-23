@@ -113,7 +113,7 @@ describe('run', () => {
     const result = run(['a=b=c']);
     expect(result.code).toBe(1);
     expect(result.stdout).toBe('');
-    expect(result.stderr).toBe('Invalid color: b=c\n');
+    expect(result.stderr).toBe('Invalid color: b=c (unknown color name)\n');
   });
 
   it('still maps --dark none to false next to other colors', () => {
@@ -140,5 +140,41 @@ describe('run', () => {
     expect(result.stdout).toBe('');
     expect(result.stderr).toMatch(/--nope/);
     expect(result.stderr.trimEnd().split('\n')).toHaveLength(1);
+  });
+
+  it('passes --gamut p3 to the theme', () => {
+    const result = run(['a=color(display-p3 0 1 0)', '--gamut', 'p3']);
+    expect(result.code).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toBe(
+      createTheme({ a: 'color(display-p3 0 1 0)' }, { gamut: 'p3' }).css,
+    );
+  });
+
+  it('uses srgb when --gamut srgb is given', () => {
+    const result = run(['a=#940BDF', '--gamut', 'srgb']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(createTheme({ a: '#940BDF' }).css);
+  });
+
+  it('rejects an unknown --gamut value on one line', () => {
+    const result = run(['a=red', '--gamut', 'rec2020']);
+    expect(result.code).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toBe(
+      'Invalid --gamut value: rec2020. Expected srgb or p3\n',
+    );
+  });
+
+  it('prints a reasoned color error on a single line', () => {
+    const result = run(['a=nope']);
+    expect(result.code).toBe(1);
+    expect(result.stderr).toBe('Invalid color: nope (unknown color name)\n');
+  });
+
+  it('lists --gamut in the usage', () => {
+    expect(run(['--help']).stdout).toContain(
+      '--gamut <space>  color gamut: srgb (default) or p3',
+    );
   });
 });

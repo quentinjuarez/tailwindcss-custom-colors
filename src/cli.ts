@@ -10,13 +10,14 @@ const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
 Options:
-  --dark <mode>  dark mode strategy: media (default), class or none
-  --help         show this help
+  --dark <mode>    dark mode strategy: media (default), class or none
+  --gamut <space>  color gamut: srgb (default) or p3
+  --help           show this help
 
 Example:
   npx tailwindcss-custom-colors primary=#940BDF --dark class > theme.css
@@ -40,6 +41,7 @@ export const run = (argv: string[]): CliResult => {
       strict: true,
       options: {
         dark: { type: 'string' },
+        gamut: { type: 'string' },
         help: { type: 'boolean' },
       },
     });
@@ -53,7 +55,7 @@ export const run = (argv: string[]): CliResult => {
 
   if (positionals.length === 0) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3]',
     );
   }
 
@@ -65,6 +67,16 @@ export const run = (argv: string[]): CliResult => {
       );
     }
     dark = DARK_MODES[values.dark];
+  }
+
+  let gamut: ThemeOptions['gamut'] = 'srgb';
+  if (values.gamut !== undefined) {
+    if (values.gamut !== 'srgb' && values.gamut !== 'p3') {
+      return fail(
+        `Invalid --gamut value: ${values.gamut}. Expected srgb or p3`,
+      );
+    }
+    gamut = values.gamut;
   }
 
   const colors = Object.create(null) as Record<string, string>;
@@ -83,7 +95,7 @@ export const run = (argv: string[]): CliResult => {
 
   try {
     return {
-      stdout: createTheme(colors, { dark }).css,
+      stdout: createTheme(colors, { dark, gamut }).css,
       stderr: '',
       code: 0,
     };

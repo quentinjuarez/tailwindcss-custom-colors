@@ -2,6 +2,8 @@ export type Oklch = { l: number; c: number; h: number };
 
 type Rgb = [number, number, number];
 
+export type Gamut = 'srgb' | 'p3';
+
 const GAMUT_EPSILON = 1e-4;
 const ACHROMATIC_CHROMA = 1e-4;
 const SEARCH_ITERATIONS = 24;
@@ -28,19 +30,27 @@ const oklchToLinearRgb = ({ l, c, h }: Oklch): Rgb => {
   ];
 };
 
-const isInGamut = (color: Oklch): boolean =>
-  oklchToLinearRgb(color).every(
+const linearSrgbToLinearP3 = ([r, g, b]: Rgb): Rgb => [
+  0.8224621 * r + 0.177538 * g,
+  0.0331941 * r + 0.9668058 * g,
+  0.0170827 * r + 0.0723974 * g + 0.9105199 * b,
+];
+
+const isInGamut = (color: Oklch, gamut: Gamut): boolean => {
+  const linear = oklchToLinearRgb(color);
+  return (gamut === 'p3' ? linearSrgbToLinearP3(linear) : linear).every(
     (channel) => channel >= -GAMUT_EPSILON && channel <= 1 + GAMUT_EPSILON,
   );
+};
 
-export const clampToGamut = (color: Oklch): Oklch => {
-  if (isInGamut(color)) return color;
+export const clampToGamut = (color: Oklch, gamut: Gamut = 'srgb'): Oklch => {
+  if (isInGamut(color, gamut)) return color;
 
   let low = 0;
   let high = color.c;
   for (let i = 0; i < SEARCH_ITERATIONS; i++) {
     const mid = (low + high) / 2;
-    if (isInGamut({ ...color, c: mid })) low = mid;
+    if (isInGamut({ ...color, c: mid }, gamut)) low = mid;
     else high = mid;
   }
   return { l: color.l, c: low, h: color.h };

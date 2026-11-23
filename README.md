@@ -17,6 +17,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [CLI](#cli)
 - [Generated output](#generated-output)
 - [Accepted input](#accepted-input)
+- [Gamut](#gamut)
 - [Dark mode](#dark-mode)
 - [Contrast](#contrast)
 - [API](#api)
@@ -128,6 +129,7 @@ Then import it:
 | `--dark media` | Dark variables under `prefers-color-scheme: dark` (default) |
 | `--dark class` | Dark variables under a `.dark` selector                     |
 | `--dark none`  | No dark variables                                           |
+| `--gamut p3`   | Keep Display P3 colors, `srgb` is the default               |
 | `--help`       | Show the usage                                              |
 
 On invalid input the CLI prints a one line error to stderr and exits with
@@ -185,24 +187,61 @@ without OKLCH support, use the `hex` values from `theme.scales`.
 
 ## Accepted input
 
-| Format       | Examples                                          |
-| ------------ | ------------------------------------------------- |
-| Hex          | `#940BDF`, `940bdf`, `#94d`, `#94df`, `#940BDF80` |
-| `rgb()`      | `rgb(148 11 223)`, `rgba(148, 11, 223, 0.5)`      |
-| `hsl()`      | `hsl(279 91% 46%)`, `hsla(279deg, 91%, 46%, 1)`   |
-| `oklch()`    | `oklch(0.53 0.27 306.8)`, `oklch(53% 0.27 307)`   |
-| Named colors | `rebeccapurple`, `teal`                           |
+| Format       | Examples                                                        |
+| ------------ | --------------------------------------------------------------- |
+| Hex          | `#940BDF`, `940bdf`, `#94d`, `#94df`, `#940BDF80`               |
+| Named colors | `rebeccapurple`, `teal`                                         |
+| `rgb()`      | `rgb(148 11 223)`, `rgba(148, 11, 223, 0.5)`, `rgb(58% 4% 87%)` |
+| `hsl()`      | `hsl(279 91% 46%)`, `hsla(279deg, 91%, 46%, 1)`                 |
+| `hwb()`      | `hwb(279 4% 13%)`                                               |
+| `lab()`      | `lab(40% 70 -80)` (D50)                                         |
+| `lch()`      | `lch(40% 100 300)` (D50)                                        |
+| `oklab()`    | `oklab(0.53 0.1 -0.2)`                                          |
+| `oklch()`    | `oklch(0.53 0.27 306.8)`, `oklch(53% 0.27 307)`                 |
+| `color()`    | `color(display-p3 0 1 0)`, `color(xyz-d65 0.3 0.2 0.4)`         |
 
+- `color()` channels accept percentages (`color(srgb 50% 0% 100%)`). Spaces: `srgb`, `srgb-linear`, `display-p3`, `a98-rgb`,
+  `prophoto-rgb`, `rec2020`, `xyz`, `xyz-d50` and `xyz-d65`.
+- Modern (space separated) and legacy (comma separated) syntaxes both work
+  for `rgb()` and `hsl()`.
+- Hue accepts `deg`, `grad`, `rad` and `turn`, or no unit. Negative hues and
+  hues above 360 wrap around.
+- `none` stands for 0 wherever a number is accepted.
 - Hex works with 3, 4, 6 or 8 digits, with or without `#`.
 - Alpha is parsed and ignored: a theme color is opaque. Use the opacity
   modifier (`/50`) instead.
-- Every color is clamped into the sRGB gamut, so the `hex` values are always
-  real sRGB colors.
+- Every color is clamped into the chosen [gamut](#gamut), sRGB by default. The
+  `hex` values are always clamped to sRGB.
 - Color names follow `/^[\p{L}\p{N}_-]+$/u` (letters, digits, `_` and `-`, any
   script). `__proto__`, `constructor` and `prototype` are rejected.
 
-Invalid input throws an `Error` with a one line message naming the color, for
-example `Invalid color: nope`.
+Invalid input throws an `Error` with a one line message that names the color
+and gives the reason in parentheses:
+
+```text
+Invalid color: nope (unknown color name)
+Invalid color: color(foo 1 2 3) (unknown color space: foo)
+```
+
+## Gamut
+
+By default every color is clamped into sRGB. With `gamut: 'p3'`, colors from
+the wider Display P3 gamut keep their saturation, and the generated steps can
+also use P3 chroma, even for sRGB inputs:
+
+```js
+createTheme({ vivid: 'color(display-p3 0 1 0)' }, { gamut: 'p3' });
+```
+
+```bash
+npx tailwindcss-custom-colors vivid='color(display-p3 0 1 0)' --gamut p3
+```
+
+With `gamut: 'p3'` the `oklch` CSS values may lie outside sRGB, and browsers
+render them on a wide gamut display. The `hex` values stay sRGB: they are the
+clamped fallback. The `contrast` color and `ratio` are computed on that
+fallback, see [Contrast](#contrast). The default `'srgb'` output is unchanged
+from 2.0.
 
 ## Dark mode
 
@@ -249,6 +288,9 @@ close to the 4.5:1 line. The library does not promise WCAG AA for you. It
 exposes the measured ratio so you can check it, in a test or at runtime. The
 ratio is measured against step `500` only, not the other steps.
 
+With `gamut: 'p3'`, `contrast` and `ratio` are computed on the sRGB `hex`
+fallback, so on a wide gamut display the real ratio can differ by a few tenths.
+
 ## API
 
 ### `createTheme(colors, options?)`
@@ -263,16 +305,19 @@ function createTheme(
 `colors` maps a name to a color in any [accepted format](#accepted-input). It
 needs at least one entry. Throws an `Error` with a one line message when
 `colors` is not an object or is empty, and on an invalid name, an invalid color
-or an invalid `dark` option.
+or an invalid `dark` or `gamut` option.
 
 ### `ThemeOptions`
 
 ```ts
-type ThemeOptions = { dark?: 'media' | 'class' | false };
+type ThemeOptions = {
+  dark?: 'media' | 'class' | false;
+  gamut?: 'srgb' | 'p3';
+};
 ```
 
-`dark` defaults to `'media'`. Any other value throws. See
-[Dark mode](#dark-mode).
+`dark` defaults to `'media'` and `gamut` to `'srgb'`. Any other value throws.
+See [Dark mode](#dark-mode) and [Gamut](#gamut).
 
 ### `Theme`
 
@@ -352,8 +397,8 @@ Only `apply()` needs a DOM.
 - Color input is capped at 100 characters.
 - The library does not name or pick colors for you: you choose the names and
   give one color for each.
-- Only the formats in [Accepted input](#accepted-input). `hwb()`, `lab()`,
-  `lch()`, `oklab()` and `color()` are not supported yet.
+- Only the formats in [Accepted input](#accepted-input). Relative colors
+  (`from`), `calc()` and `color-mix()` are not supported.
 - The input is exactly step `500`, so a very light or very dark input (for
   example `#0f172a`, `#facc15`, a near white or `#ffffff`) leaves less room on
   one side of it. Some steps then end up close together or identical in hex.

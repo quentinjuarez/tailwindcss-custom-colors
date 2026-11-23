@@ -46,7 +46,8 @@ The only option left is `dark: 'media' | 'class' | false`.
 - A dark scale is generated. By default it applies under
   `prefers-color-scheme: dark`; pass `{ dark: false }` to keep light only.
 - Input is no longer hex only: `rgb()`, `hsl()`, `oklch()` and CSS named
-  colors are accepted too.
+  colors are accepted too. Since 2.1, `hwb()`, `lab()`, `lch()`, `oklab()` and
+  `color()` are accepted as well.
 - The package is published as ESM and CommonJS, and ships a CLI.
 - Node.js 22 or later is required.
 

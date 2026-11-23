@@ -1,3 +1,5 @@
+import { converter } from 'culori';
+
 import {
   hexToOklch,
   oklchToCss,
@@ -195,6 +197,37 @@ describe('darkScale', () => {
     expect(dark['950']).toEqual(light['50']);
     for (const step of STEPS) {
       expect(dark[step]).toEqual(light[String(1000 - Number(step)) as Step]);
+    }
+  });
+});
+
+describe('lightScale gamut', () => {
+  const base: Oklch = { l: 0.7, c: 0.25, h: 150 };
+
+  it('defaults to srgb', () => {
+    expect(lightScale(base)).toEqual(lightScale(base, 'srgb'));
+  });
+
+  it('keeps the base at 500 and every step inside p3', () => {
+    const toP3 = converter('p3');
+    const toSrgb = converter('rgb');
+    const inRange = (channels: number[]): boolean =>
+      channels.every((v) => v >= -2e-3 && v <= 1 + 2e-3);
+    const baseSrgb = toSrgb({ mode: 'oklch', ...base });
+    const baseP3 = toP3({ mode: 'oklch', ...base });
+    expect(inRange([baseSrgb.r, baseSrgb.g, baseSrgb.b])).toBe(false);
+    expect(inRange([baseP3.r, baseP3.g, baseP3.b])).toBe(true);
+
+    const scale = lightScale(base, 'p3');
+    const srgbScale = lightScale(base, 'srgb');
+    expect(scale['500']).toEqual(base);
+    expect(STEPS.some((step) => scale[step].c > srgbScale[step].c)).toBe(true);
+    for (const step of STEPS) {
+      const { r, g, b } = toP3({ mode: 'oklch', ...scale[step] });
+      for (const v of [r, g, b]) {
+        expect(v).toBeGreaterThanOrEqual(-2e-3);
+        expect(v).toBeLessThanOrEqual(1 + 2e-3);
+      }
     }
   });
 });

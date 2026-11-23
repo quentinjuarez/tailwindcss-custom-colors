@@ -1,4 +1,4 @@
-import { clampToGamut, type Oklch } from './color/convert.js';
+import { clampToGamut, type Gamut, type Oklch } from './color/convert.js';
 
 export const STEPS = [
   '50',
@@ -42,7 +42,10 @@ const CURVE: Record<Step, { towardEnd: number; chroma: number }> = {
 
 const isLightStep = (step: Step): boolean => Number(step) < 500;
 
-export const lightScale = (base: Oklch): Record<Step, Oklch> => {
+export const lightScale = (
+  base: Oklch,
+  gamut: Gamut = 'srgb',
+): Record<Step, Oklch> => {
   const lightEnd = Math.max(LIGHT_END, base.l + (1 - base.l) * MIN_ROOM);
   const darkEnd = Math.min(DARK_END, base.l * (1 - MIN_ROOM));
 
@@ -56,11 +59,14 @@ export const lightScale = (base: Oklch): Record<Step, Oklch> => {
   const entries = STEPS.map((step): [Step, Oklch] => {
     if (step === '500') return [step, base];
     const { towardEnd, chroma } = CURVE[step];
-    const color = clampToGamut({
-      l: lightnessAt(step, towardEnd),
-      c: base.c * chroma,
-      h: base.h,
-    });
+    const color = clampToGamut(
+      {
+        l: lightnessAt(step, towardEnd),
+        c: base.c * chroma,
+        h: base.h,
+      },
+      gamut,
+    );
     return [step, color];
   });
 
