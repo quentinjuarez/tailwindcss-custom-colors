@@ -19,6 +19,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [Accepted input](#accepted-input)
 - [Gamut](#gamut)
 - [Dark mode](#dark-mode)
+- [Runtime kit](#runtime-kit)
 - [Contrast](#contrast)
   - [APCA, targets and on-colors](#apca-targets-and-on-colors)
 - [API](#api)
@@ -271,8 +272,64 @@ element. Inline variables beat the stylesheet, so a forced dark `apply` wins
 over the media query and the `.dark` class. The same holds for
 `apply(element, 'light')`: once `apply` has run on an element, the stylesheet
 no longer switches its variables. `apply` does not toggle a class and does not
-read `prefers-color-scheme`: choosing the mode, and remembering it, is up to
-your app.
+read `prefers-color-scheme`: for a light, dark or system switch that
+remembers the choice, see the [runtime kit](#runtime-kit).
+
+## Runtime kit
+
+A small opt-in module for the browser: switch between light, dark and system,
+remember the choice and avoid a flash on first paint. It has no dependency and
+lives behind its own entry point, so it costs nothing unless you import it.
+
+It toggles the `dark` class and the `color-scheme` property on `<html>`, so it
+needs `dark: 'class'`. With `'media'` the OS decides and a class cannot force a
+mode. Tailwind 4 needs this line once to make `dark:` utilities follow the
+class:
+
+```css
+@custom-variant dark (&:where(.dark, .dark *));
+```
+
+```js
+import {
+  applyScheme,
+  persist,
+  watchScheme,
+} from 'tailwindcss-custom-colors/runtime';
+
+const store = persist();
+applyScheme(store.get());
+
+watchScheme(() => {
+  if (store.get() === 'system') applyScheme('system');
+});
+
+button.onclick = () => {
+  store.set('dark');
+  applyScheme('dark');
+};
+```
+
+To avoid a flash before your bundle loads, inline the script in `<head>`,
+before the stylesheet. It runs the same logic as `applyScheme(persist(key).get())`
+and never throws:
+
+```js
+import { themeScript } from 'tailwindcss-custom-colors/runtime';
+
+const head = `<script>${themeScript()}</script>`;
+```
+
+| Function                  | What it does                                                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `applyScheme(scheme, el)` | Applies `'light'`, `'dark'` or `'system'` to `el` (default `<html>`) and returns the resolved mode. `'system'` reads the OS.  |
+| `watchScheme(onChange)`   | Calls `onChange('dark' \| 'light')` when the OS preference changes. Returns a function that stops listening.                  |
+| `persist(key)`            | Returns `{ get, set }` backed by `localStorage` (default key `'theme'`). `get` falls back to `'system'` when storage fails.   |
+| `themeScript(key)`        | Returns the inline script for `<head>`. The key may only contain letters, digits, `_`, `.`, `:` and `-`, up to 64 characters. |
+
+Do not mix it with `theme.apply(el, 'dark')`: inline variables beat the class.
+Without `matchMedia` (Node, old browsers), `'system'` means light and
+`watchScheme` does nothing.
 
 ## Contrast
 
