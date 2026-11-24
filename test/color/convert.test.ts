@@ -1,4 +1,4 @@
-import { oklch, parse } from 'culori';
+import { converter, oklch, parse } from 'culori';
 
 import {
   clampToGamut,
@@ -106,5 +106,34 @@ describe('oklchToCss', () => {
     expect(oklchToCss({ l: 0.5, c: 0.1, h: 360 })).toBe(
       'oklch(0.5000 0.1000 0.00)',
     );
+  });
+});
+
+describe('display-p3 gamut', () => {
+  const toP3 = converter('p3');
+  const inP3 = (color: { l: number; c: number; h: number }): boolean => {
+    const { r, g, b } = toP3({ mode: 'oklch', ...color });
+    return [r, g, b].every((v) => v >= -2e-3 && v <= 1 + 2e-3);
+  };
+
+  it('keeps more chroma in p3 than in srgb', () => {
+    const color = { l: 0.7, c: 0.3, h: 150 };
+    expect(clampToGamut(color, 'p3').c).toBeGreaterThan(clampToGamut(color).c);
+  });
+
+  it('lands inside p3', () => {
+    expect(inP3(clampToGamut({ l: 0.7, c: 0.3, h: 150 }, 'p3'))).toBe(true);
+  });
+
+  it('returns an in-gamut color unchanged for both gamuts', () => {
+    const color = { l: 0.6, c: 0.05, h: 200 };
+    expect(clampToGamut(color, 'srgb')).toEqual(color);
+    expect(clampToGamut(color, 'p3')).toEqual(color);
+  });
+
+  it('converts a p3-only color to a 7 character hex', () => {
+    const color = { l: 0.7, c: 0.3, h: 150 };
+    expect(oklchToHex(color)).toMatch(/^#[0-9a-f]{6}$/);
+    expect(oklchToHex(color)).toBe(oklchToHex(clampToGamut(color)));
   });
 });

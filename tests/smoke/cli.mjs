@@ -16,3 +16,20 @@ const bad = spawnSync(process.execPath, [bin, 'primary=nope'], {
 assert.equal(bad.status, 1);
 assert.equal(bad.stdout, '');
 assert.match(bad.stderr, /Invalid color: nope/);
+
+const p3 = spawnSync(
+  process.execPath,
+  [bin, 'vivid=color(display-p3 0 1 0)', '--gamut', 'p3'],
+  { encoding: 'utf8' },
+);
+assert.equal(p3.status, 0);
+assert.match(p3.stdout, /--vivid-500: oklch\(/);
+
+const badGamut = spawnSync(process.execPath, [bin, 'a=red', '--gamut', 'x'], {
+  encoding: 'utf8',
+});
+assert.equal(badGamut.status, 1);
+assert.equal(
+  badGamut.stderr,
+  'Invalid --gamut value: x. Expected srgb or p3\n',
+);

@@ -3,7 +3,7 @@ import { createRequire } from 'node:module';
 
 import { compile } from 'tailwindcss';
 
-import { createTheme } from '../src/theme.js';
+import { createTheme, type ThemeOptions } from '../src/theme.js';
 
 const require = createRequire(import.meta.url);
 
@@ -12,8 +12,12 @@ const loadStylesheet = async (id: string, base: string) => {
   return { path, base, content: await readFile(path, 'utf8') };
 };
 
-const build = async (colors: Record<string, string>, candidates: string[]) => {
-  const { css } = createTheme(colors);
+const build = async (
+  colors: Record<string, string>,
+  candidates: string[],
+  options: ThemeOptions = {},
+) => {
+  const { css } = createTheme(colors, options);
   const compiler = await compile(`@import "tailwindcss/utilities";\n${css}`, {
     base: process.cwd(),
     loadStylesheet,
@@ -63,5 +67,19 @@ describe('tailwind 4 compile', () => {
     expect(border).toContain('var(--brand-200)');
     expect(background).not.toContain('oklch(');
     expect(border).not.toContain('oklch(');
+  });
+
+  it('compiles a p3 theme', async () => {
+    const { css, output } = await build(
+      { vivid: 'color(display-p3 0 1 0)' },
+      ['bg-vivid-500', 'text-vivid-contrast'],
+      { gamut: 'p3' },
+    );
+
+    expect(css).toContain('--vivid-500: oklch(');
+    expect(rule(output, '.bg-vivid-500')).toContain('var(--vivid-500)');
+    expect(rule(output, '.text-vivid-contrast')).toContain(
+      'var(--vivid-contrast)',
+    );
   });
 });

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+
+import { parseColor } from '../src/color/parse.js';
 import {
   createTheme,
   type Mode,
@@ -167,4 +170,61 @@ describe('createTheme', () => {
     );
     expect(calls).toHaveLength(0);
   });
+});
+
+const fixture = (name: string) =>
+  readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
+
+describe('gamut option', () => {
+  it('keeps the 2.0.0 stylesheet byte identical with default options', () => {
+    expect(
+      createTheme({ primary: '#940BDF', accent: 'rebeccapurple' }).css,
+    ).toBe(fixture('baseline-2.0.0.txt'));
+  });
+
+  it('keeps the 2.0.0 stylesheet for white, black and other inputs', () => {
+    const reference = JSON.parse(fixture('reference-2.0.0.json')) as Record<
+      string,
+      string
+    >;
+    expect(Object.keys(reference)).toHaveLength(5);
+    for (const [input, css] of Object.entries(reference)) {
+      expect(createTheme({ c: input }).css, input).toBe(css);
+      expect(createTheme({ c: input }, { gamut: 'srgb' }).css, input).toBe(css);
+    }
+  });
+
+  it('keeps a display-p3 input as step 500 with a valid sRGB hex', () => {
+    const { scales } = createTheme(
+      { a: 'color(display-p3 0 1 0)' },
+      { gamut: 'p3' },
+    );
+    const step = scales.a.light.steps['500'];
+    const parsed = parseColor('color(display-p3 0 1 0)', 'p3');
+    const [l, c, h] = /oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/
+      .exec(step.oklch)!
+      .slice(1)
+      .map(Number);
+    expect(l).toBeCloseTo(parsed.l, 3);
+    expect(c).toBeCloseTo(parsed.c, 3);
+    expect(h).toBeCloseTo(parsed.h, 1);
+    expect(step.hex).toMatch(/^#[0-9a-f]{6}$/);
+    expect(step.oklch).not.toBe(
+      createTheme({ a: 'color(display-p3 0 1 0)' }).scales.a.light.steps['500']
+        .oklch,
+    );
+  });
+
+  it.each(['rec2020', 'P3', '', null, 1])(
+    'rejects an invalid gamut: %j',
+    (gamut) => {
+      expect(() =>
+        createTheme({ a: 'red' }, { gamut: gamut as ThemeOptions['gamut'] }),
+      ).toThrow(
+        new Error(
+          `Invalid gamut option: ${String(gamut)}. Expected 'srgb' or 'p3'`,
+        ),
+      );
+    },
+  );
 });

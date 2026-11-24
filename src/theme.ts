@@ -1,5 +1,10 @@
 import { pickContrast } from './color/contrast.js';
-import { oklchToCss, oklchToHex, type Oklch } from './color/convert.js';
+import {
+  oklchToCss,
+  oklchToHex,
+  type Gamut,
+  type Oklch,
+} from './color/convert.js';
 import { parseColor } from './color/parse.js';
 import { assertConfigKey } from './names.js';
 import {
@@ -12,7 +17,10 @@ import {
 
 export type Mode = 'light' | 'dark';
 
-export type ThemeOptions = { dark?: 'media' | 'class' | false };
+export type ThemeOptions = {
+  dark?: 'media' | 'class' | false;
+  gamut?: Gamut;
+};
 
 export type StyleTarget = {
   style: { setProperty(name: string, value: string): void };
@@ -81,6 +89,16 @@ const resolveDark = (dark: unknown): ThemeOptions['dark'] => {
   return dark;
 };
 
+const resolveGamut = (gamut: unknown): Gamut => {
+  if (gamut === undefined) return 'srgb';
+  if (gamut !== 'srgb' && gamut !== 'p3') {
+    throw new Error(
+      `Invalid gamut option: ${String(gamut)}. Expected 'srgb' or 'p3'`,
+    );
+  }
+  return gamut;
+};
+
 export const createTheme = (
   colors: Record<string, string>,
   options: ThemeOptions = {},
@@ -94,11 +112,12 @@ export const createTheme = (
   }
 
   const dark = resolveDark(options.dark);
+  const gamut = resolveGamut(options.gamut);
   const scales: Theme['scales'] = {};
 
   for (const [name, input] of inputs) {
     assertConfigKey(name);
-    const light = lightScale(parseColor(input));
+    const light = lightScale(parseColor(input, gamut), gamut);
     scales[name] = {
       light: buildScale(light),
       dark: buildScale(darkScale(light)),
