@@ -33,3 +33,13 @@ assert.equal(
   badGamut.stderr,
   'Invalid --gamut value: x. Expected srgb or p3\n',
 );
+
+const report = spawnSync(process.execPath, [bin, 'a=#940BDF', '--report'], {
+  encoding: 'utf8',
+});
+assert.equal(report.status, 0);
+assert.match(
+  report.stdout,
+  /^color\s+mode\s+step\s+on\s+ratio\s+apca\s+pass\n/,
+);
+assert.equal(report.stdout.trimEnd().split('\n').length, 23);

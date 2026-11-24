@@ -20,6 +20,8 @@ export type Scale = {
   steps: Record<Step, { oklch: string; hex: string }>;
   contrast: '#000000' | '#ffffff';
   ratio: number;
+  apca: number;
+  on: Record<Step, '#000000' | '#ffffff'>;
 };
 
 const LIGHT_END = 0.975;

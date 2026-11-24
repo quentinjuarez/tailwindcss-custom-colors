@@ -20,6 +20,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [Gamut](#gamut)
 - [Dark mode](#dark-mode)
 - [Contrast](#contrast)
+  - [APCA, targets and on-colors](#apca-targets-and-on-colors)
 - [API](#api)
 - [Server rendering](#server-rendering)
 - [Limits](#limits)
@@ -125,13 +126,17 @@ Then import it:
 @import './theme.css';
 ```
 
-| Flag           | What it does                                                |
-| -------------- | ----------------------------------------------------------- |
-| `--dark media` | Dark variables under `prefers-color-scheme: dark` (default) |
-| `--dark class` | Dark variables under a `.dark` selector                     |
-| `--dark none`  | No dark variables                                           |
-| `--gamut p3`   | Keep Display P3 colors, `srgb` is the default               |
-| `--help`       | Show the usage                                              |
+| Flag              | What it does                                                         |
+| ----------------- | -------------------------------------------------------------------- |
+| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)          |
+| `--dark class`    | Dark variables under a `.dark` selector                              |
+| `--dark none`     | No dark variables                                                    |
+| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                        |
+| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)  |
+| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number |
+| `--on`            | Also emit one on-color variable per step                             |
+| `--report`        | Print a contrast report table instead of CSS                         |
+| `--help`          | Show the usage                                                       |
 
 On invalid input the CLI prints a one line error to stderr and exits with
 code 1.
@@ -292,6 +297,43 @@ ratio is measured against step `500` only, not the other steps.
 With `gamut: 'p3'`, `contrast` and `ratio` are computed on the sRGB `hex`
 fallback, so on a wide gamut display the real ratio can differ by a few tenths.
 
+### APCA, targets and on-colors
+
+Every scale also has `apca`, the absolute APCA lightness contrast (Lc) of its
+`contrast` color over step `500`, and `on`, the black or white pick for each of
+the 11 steps. The `contrast` option tunes how they are picked and judged:
+
+```js
+const theme = createTheme(
+  { primary: '#940BDF' },
+  { contrast: { method: 'apca', target: 'AAA', on: true } },
+);
+```
+
+| Key      | Values                               | Default  | Effect                                                                 |
+| -------- | ------------------------------------ | -------- | ---------------------------------------------------------------------- |
+| `method` | `'wcag'`, `'apca'`                   | `'wcag'` | Which measure picks black or white (`contrast` and `on`).              |
+| `target` | `'AA'`, `'AAA'` or a positive number | `'AA'`   | Threshold used by `report()`: 4.5 or Lc 60 for AA, 7 or Lc 75 for AAA. |
+| `on`     | `true`, `false`                      | `false`  | Emit `--<name>-<step>-on` variables, with `--color-<name>-<step>-on`.  |
+
+`on: true` lets you write `text-primary-600-on` on `bg-primary-600`. With the
+default options the CSS is exactly what 2.1 produced. `method: 'apca'` can change
+the `--<name>-contrast` pick, and a numeric `target` is used as is, so keep it
+in the range of the method (WCAG ratios go up to 21, APCA Lc up to about 108).
+
+`theme.report()` returns one row per color, mode and step, so you can check a
+palette in a test or print it:
+
+```js
+theme.report()[5];
+// { color: 'primary', mode: 'light', step: '500', on: '#ffffff',
+//   ratio: 6.23, apca: 84.1, pass: true }
+```
+
+`pass` compares the value of the active method (`ratio` for WCAG, `apca` for
+APCA) with the target. All measures use the sRGB `hex` of each step. The CLI
+prints the same rows with `--report`.
+
 ## API
 
 ### `createTheme(colors, options?)`
@@ -314,11 +356,17 @@ or an invalid `dark` or `gamut` option.
 type ThemeOptions = {
   dark?: 'media' | 'class' | false;
   gamut?: 'srgb' | 'p3';
+  contrast?: {
+    method?: 'wcag' | 'apca';
+    target?: 'AA' | 'AAA' | number;
+    on?: boolean;
+  };
 };
 ```
 
 `dark` defaults to `'media'` and `gamut` to `'srgb'`. Any other value throws.
-See [Dark mode](#dark-mode) and [Gamut](#gamut).
+See [Dark mode](#dark-mode), [Gamut](#gamut) and
+[Contrast](#apca-targets-and-on-colors).
 
 ### `Theme`
 
@@ -328,6 +376,7 @@ type Theme = {
   vars(mode?: 'light' | 'dark'): string;
   apply(element?: StyleTarget, mode?: 'light' | 'dark'): void;
   scales: Record<string, { light: Scale; dark: Scale }>;
+  report(): ReportRow[];
 };
 ```
 
@@ -336,6 +385,7 @@ type Theme = {
 | `css`                  | The full stylesheet shown in [Generated output](#generated-output).                                                                                                              |
 | `vars(mode)`           | The variable declarations only, one per line, for `mode` (default `'light'`). No selector around them.                                                                           |
 | `apply(element, mode)` | Sets the variables of `mode` (default `'light'`) as inline styles on `element`, by default `document.documentElement`. Throws when there is no element and no global `document`. |
+| `report()`             | A contrast row per color, mode and step, see [Contrast](#apca-targets-and-on-colors).                                                                                            |
 | `scales`               | The computed values, per color name and mode.                                                                                                                                    |
 
 `vars` and `apply` throw on a mode other than `'light'` or `'dark'`.
@@ -365,6 +415,18 @@ type Scale = {
   steps: Record<Step, { oklch: string; hex: string }>;
   contrast: '#000000' | '#ffffff';
   ratio: number;
+  apca: number;
+  on: Record<Step, '#000000' | '#ffffff'>;
+};
+
+type ReportRow = {
+  color: string;
+  mode: 'light' | 'dark';
+  step: Step;
+  on: '#000000' | '#ffffff';
+  ratio: number;
+  apca: number;
+  pass: boolean;
 };
 ```
 
@@ -373,8 +435,8 @@ theme.scales.primary.light.steps['500']; // { oklch: 'oklch(0.5277 0.2669 306.79
 theme.scales.primary.dark.steps['50'].hex; // the darkest shade in dark mode
 ```
 
-The types `Theme`, `ThemeOptions`, `Scale`, `Step`, `Mode` and `StyleTarget`
-are exported.
+The types `Theme`, `ThemeOptions`, `ContrastOptions`, `ContrastMethod`,
+`ReportRow`, `Scale`, `Step`, `Mode` and `StyleTarget` are exported.
 
 ## Server rendering
 
