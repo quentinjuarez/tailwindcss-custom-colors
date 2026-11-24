@@ -178,3 +178,76 @@ describe('run', () => {
     );
   });
 });
+
+describe('accessibility flags', () => {
+  it('passes --contrast apca to the theme', () => {
+    const result = run(['gray=#808080', '--contrast', 'apca']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      createTheme({ gray: '#808080' }, { contrast: { method: 'apca' } }).css,
+    );
+    expect(result.stdout).toContain('--gray-contrast: #ffffff;');
+  });
+
+  it('emits on-color variables with --on', () => {
+    const result = run(['a=#940BDF', '--on']);
+    expect(result.stdout).toContain('--a-600-on: #');
+  });
+
+  it('prints a text report with --report', () => {
+    const result = run(['a=#940BDF', '--report']);
+    const lines = result.stdout.trimEnd().split('\n');
+    expect(result.code).toBe(0);
+    expect(lines[0]).toMatch(
+      /^color\s+mode\s+step\s+on\s+ratio\s+apca\s+pass$/,
+    );
+    expect(lines).toHaveLength(1 + 22);
+    expect(lines[1]).toMatch(/^a\s+light\s+50\s+#000000\s+/);
+    expect(result.stdout).not.toContain(':root');
+  });
+
+  it('applies --target to the report', () => {
+    const passes = (target: string) =>
+      run(['a=#6b7280', '--report', '--target', target]).stdout.match(/yes$/gm)
+        ?.length ?? 0;
+    expect(passes('AAA')).toBeLessThan(passes('AA'));
+    expect(passes('12')).toBeLessThan(passes('AAA'));
+  });
+
+  it.each([
+    [
+      ['--contrast', 'x'],
+      'Invalid --contrast value: x. Expected wcag or apca\n',
+    ],
+    [
+      ['--target', 'nope'],
+      'Invalid --target value: nope. Expected AA, AAA or a positive number\n',
+    ],
+    [
+      ['--target', ' 0x10 '],
+      'Invalid --target value:  0x10 . Expected AA, AAA or a positive number\n',
+    ],
+    [
+      ['--target', '1e1'],
+      'Invalid --target value: 1e1. Expected AA, AAA or a positive number\n',
+    ],
+    [
+      ['--target', '0'],
+      'Invalid --target value: 0. Expected AA, AAA or a positive number\n',
+    ],
+    [
+      ['--target', ''],
+      'Invalid --target value: . Expected AA, AAA or a positive number\n',
+    ],
+  ])('rejects %j', (flags, message) => {
+    const result = run(['a=red', ...flags]);
+    expect(result).toEqual({ stdout: '', stderr: message, code: 1 });
+  });
+
+  it('lists the flags in the usage', () => {
+    const { stdout } = run(['--help']);
+    for (const flag of ['--contrast', '--target', '--on', '--report']) {
+      expect(stdout).toContain(flag);
+    }
+  });
+});

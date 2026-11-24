@@ -228,3 +228,143 @@ describe('gamut option', () => {
     },
   );
 });
+
+describe('contrast option', () => {
+  it('adds apca and per step on-colors to every scale', () => {
+    const { light, dark } = createTheme({ primary: '#940BDF' }).scales.primary;
+    expect(typeof light.apca).toBe('number');
+    expect(Object.keys(light.on)).toHaveLength(11);
+    expect(light.on['500']).toBe(light.contrast);
+    expect(dark.on['50']).toBe(light.on['950']);
+  });
+
+  it('emits no on-color variable by default', () => {
+    expect(createTheme({ primary: '#940BDF' }).css).not.toContain('-on');
+  });
+
+  it('emits on-color variables in every existing block with on: true', () => {
+    const options = { contrast: { on: true } };
+    const media = createTheme({ primary: '#940BDF' }, options).css;
+    expect(media).toContain('  --primary-600-on: #');
+    expect(media).toContain('    --primary-600-on: #');
+    expect(media).toContain('--color-primary-600-on: var(--primary-600-on);');
+    expect(media.match(/--primary-950-on:/g)).toHaveLength(2);
+
+    const klass = createTheme(
+      { primary: '#940BDF' },
+      { ...options, dark: 'class' },
+    );
+    expect(klass.css).toMatch(/\.dark \{[^}]*--primary-600-on: #/);
+
+    const light = createTheme(
+      { primary: '#940BDF' },
+      { ...options, dark: false },
+    );
+    expect(light.css.match(/--primary-950-on:/g)).toHaveLength(1);
+  });
+
+  it('puts the dark on-colors of the mirrored steps in the dark block', () => {
+    const theme = createTheme(
+      { primary: '#808080' },
+      { contrast: { on: true } },
+    );
+    const { light, dark } = theme.scales.primary;
+    expect(theme.vars('dark')).toContain(`--primary-50-on: ${dark.on['50']};`);
+    expect(dark.on['50']).toBe(light.on['950']);
+  });
+
+  it('lets the method change the contrast pick', () => {
+    const wcag = createTheme({ gray: '#808080' }).scales.gray.light;
+    const apca = createTheme(
+      { gray: '#808080' },
+      { contrast: { method: 'apca' } },
+    ).scales.gray.light;
+    expect(wcag.contrast).toBe('#000000');
+    expect(apca.contrast).toBe('#ffffff');
+  });
+
+  it('reports colors x modes x steps rows in order', () => {
+    const rows = createTheme({ a: '#940BDF', b: '#3b82f6' }).report();
+    expect(rows).toHaveLength(2 * 2 * 11);
+    expect(rows[0]).toMatchObject({ color: 'a', mode: 'light', step: '50' });
+    expect(rows[11]).toMatchObject({ color: 'a', mode: 'dark', step: '50' });
+    expect(rows[22]).toMatchObject({ color: 'b', mode: 'light', step: '50' });
+    expect(Object.keys(rows[0]!).sort()).toEqual(
+      ['apca', 'color', 'mode', 'on', 'pass', 'ratio', 'step'].sort(),
+    );
+  });
+
+  it('reports light rows only with dark: false', () => {
+    const rows = createTheme({ a: '#940BDF' }, { dark: false }).report();
+    expect(rows).toHaveLength(11);
+    expect(rows.every((row) => row.mode === 'light')).toBe(true);
+  });
+
+  it('flips pass when the target gets stricter', () => {
+    const passes = (target: 'AA' | 'AAA' | number) =>
+      createTheme({ a: '#6b7280' }, { contrast: { target } })
+        .report()
+        .filter((row) => row.pass).length;
+    expect(passes('AAA')).toBeLessThan(passes('AA'));
+    expect(passes(12)).toBeLessThan(passes('AAA'));
+  });
+
+  it('judges apca rows against Lc thresholds', () => {
+    const rows = createTheme(
+      { a: '#940BDF' },
+      { contrast: { method: 'apca', target: 60 } },
+    ).report();
+    for (const row of rows) expect(row.pass).toBe(row.apca >= 60);
+  });
+
+  it('compares the unrounded measure with the target', () => {
+    const wcag = createTheme(
+      { x: '#041aa1' },
+      { contrast: { target: 'AAA' } },
+    ).report();
+    const row = wcag.find((r) => r.mode === 'light' && r.step === '300')!;
+    expect(row.ratio).toBe(7);
+    expect(row.pass).toBe(false);
+    const apca = createTheme(
+      { x: '#34ef97' },
+      { contrast: { method: 'apca' } },
+    ).report();
+    const lc = apca.find((r) => r.mode === 'light' && r.step === '600')!;
+    expect(lc.apca).toBe(60);
+    expect(lc.pass).toBe(false);
+  });
+
+  it.each([
+    ['inherited method', Object.create({ method: 'apca' })],
+    ['inherited unknown key', Object.create({ foo: 1 })],
+    ['symbol key', { [Symbol('x')]: 1 }],
+    ['date', new Date()],
+  ])('rejects %s', (_label, contrast) => {
+    expect(() =>
+      createTheme({ a: 'red' }, { contrast: contrast as never }),
+    ).toThrow(/^Invalid contrast option: /);
+  });
+
+  it('closes the quote of a long unknown key', () => {
+    expect(() =>
+      createTheme({ a: 'red' }, { contrast: { ['x'.repeat(80)]: 1 } as never }),
+    ).toThrow(/"x{40}"$/);
+  });
+
+  it.each([
+    ['AAAA', { target: 'AAAA' }],
+    ['zero', { target: 0 }],
+    ['negative', { target: -3 }],
+    ['NaN', { target: Number.NaN }],
+    ['method', { method: 'x' }],
+    ['unknown key', { foo: 1 }],
+    ['on type', { on: 'yes' }],
+    ['string', 'AA'],
+    ['array', []],
+    ['null', null],
+  ])('rejects an invalid contrast option: %s', (_label, contrast) => {
+    expect(() =>
+      createTheme({ a: 'red' }, { contrast: contrast as never }),
+    ).toThrow(/^Invalid contrast option: /);
+  });
+});
