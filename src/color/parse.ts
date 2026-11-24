@@ -98,8 +98,8 @@ const splitArguments = (body: string): string[] => {
   return components.slice(0, 3);
 };
 
-const channelToByte = (token: Token): number => {
-  const byte = token.percent ? (token.value / 100) * 255 : token.value;
+const channelToByte = (input: Token): number => {
+  const byte = input.percent ? (input.value / 100) * 255 : input.value;
   return Math.round(Math.min(255, Math.max(0, byte)));
 };
 
@@ -114,10 +114,10 @@ const expandHex = (digits: string): string => {
   return `#${six}`;
 };
 
-const hslToBytes = (hue: number, saturation: number, lightness: number) => {
-  const h = (((hue % 360) + 360) % 360) / 360;
+const hslToBytes = (degrees: number, saturation: number, light: number) => {
+  const h = (((degrees % 360) + 360) % 360) / 360;
   const s = Math.min(1, Math.max(0, saturation));
-  const l = Math.min(1, Math.max(0, lightness));
+  const l = Math.min(1, Math.max(0, light));
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;
   const channel = (offset: number): number => {
