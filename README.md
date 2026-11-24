@@ -63,6 +63,7 @@ script:
 
 ```js
 import { writeFileSync } from 'node:fs';
+
 import { createTheme } from 'tailwindcss-custom-colors';
 
 writeFileSync('src/theme.css', createTheme({ primary: '#940BDF' }).css);
