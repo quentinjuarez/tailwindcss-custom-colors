@@ -82,4 +82,25 @@ describe('tailwind 4 compile', () => {
       'var(--vivid-contrast)',
     );
   });
+
+  it('compiles the semantic role and derived utilities', async () => {
+    const { output } = await build(
+      { primary: '#940BDF' },
+      [
+        'bg-surface',
+        'text-on-surface',
+        'border-border',
+        'text-muted',
+        'bg-success-500',
+        'text-neutral-700',
+      ],
+      { roles: true, status: true },
+    );
+    expect(rule(output, '.bg-surface')).toContain('var(--surface)');
+    expect(rule(output, '.text-on-surface')).toContain('var(--on-surface)');
+    expect(rule(output, '.border-border')).toContain('var(--border)');
+    expect(rule(output, '.text-muted')).toContain('var(--muted)');
+    expect(rule(output, '.bg-success-500')).toContain('var(--success-500)');
+    expect(rule(output, '.text-neutral-700')).toContain('var(--neutral-700)');
+  });
 });

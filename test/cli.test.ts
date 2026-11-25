@@ -251,3 +251,23 @@ describe('accessibility flags', () => {
     }
   });
 });
+
+describe('semantic flags', () => {
+  it('maps --neutral, --status and --roles', () => {
+    const result = run(['primary=#940BDF', '--neutral', '--status', '--roles']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      createTheme(
+        { primary: '#940BDF' },
+        { neutral: 'auto', status: true, roles: true },
+      ).css,
+    );
+  });
+
+  it('lists the flags in the usage', () => {
+    const { stdout } = run(['--help']);
+    for (const flag of ['--neutral', '--status', '--roles']) {
+      expect(stdout).toContain(flag);
+    }
+  });
+});

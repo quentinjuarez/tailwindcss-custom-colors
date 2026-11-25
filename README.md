@@ -20,6 +20,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [Gamut](#gamut)
 - [Dark mode](#dark-mode)
 - [Runtime kit](#runtime-kit)
+- [Semantic colors](#semantic-colors)
 - [Contrast](#contrast)
   - [APCA, targets and on-colors](#apca-targets-and-on-colors)
 - [API](#api)
@@ -127,17 +128,20 @@ Then import it:
 @import './theme.css';
 ```
 
-| Flag              | What it does                                                         |
-| ----------------- | -------------------------------------------------------------------- |
-| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)          |
-| `--dark class`    | Dark variables under a `.dark` selector                              |
-| `--dark none`     | No dark variables                                                    |
-| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                        |
-| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)  |
-| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number |
-| `--on`            | Also emit one on-color variable per step                             |
-| `--report`        | Print a contrast report table instead of CSS                         |
-| `--help`          | Show the usage                                                       |
+| Flag              | What it does                                                          |
+| ----------------- | --------------------------------------------------------------------- |
+| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)           |
+| `--dark class`    | Dark variables under a `.dark` selector                               |
+| `--dark none`     | No dark variables                                                     |
+| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                         |
+| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)   |
+| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number  |
+| `--on`            | Also emit one on-color variable per step                              |
+| `--neutral`       | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors) |
+| `--status`        | Add `success`, `warning`, `danger` and `info` scales                  |
+| `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables       |
+| `--report`        | Print a contrast report table instead of CSS                          |
+| `--help`          | Show the usage                                                        |
 
 On invalid input the CLI prints a one line error to stderr and exits with
 code 1.
@@ -331,6 +335,54 @@ Do not mix it with `theme.apply(el, 'dark')`: inline variables beat the class.
 Without `matchMedia` (Node, old browsers), `'system'` means light and
 `watchScheme` does nothing.
 
+## Semantic colors
+
+Three opt-in options derive more colors from the ones you pass. Each extra
+scale goes through the same engine, so it has a dark mirror, a contrast color,
+the `contrast` options and its own rows in `report()`.
+
+```js
+createTheme(
+  { primary: '#0B6FDF' },
+  { neutral: 'auto', status: true, roles: true },
+);
+```
+
+| Option            | Adds                                                                                     |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `neutral: 'auto'` | A `neutral` scale tinted with the hue of your first color, with a chroma of at most 0.02 |
+| `status: true`    | `success`, `warning`, `danger` and `info`, from fixed hues (145, 85, 27 and 250)         |
+| `roles: true`     | Four variables for the common cases, and it adds `neutral` when you have none            |
+
+The roles point at neutral steps, so the dark mirror switches them with no
+extra value:
+
+| Role       | Variable       | Value                | Utility           |
+| ---------- | -------------- | -------------------- | ----------------- |
+| Background | `--surface`    | `var(--neutral-50)`  | `bg-surface`      |
+| Text       | `--on-surface` | `var(--neutral-950)` | `text-on-surface` |
+| Dividers   | `--border`     | `var(--neutral-200)` | `border-border`   |
+| Quiet text | `--muted`      | `var(--neutral-600)` | `text-muted`      |
+
+```html
+<div class="bg-surface text-on-surface border border-border">
+  <p class="text-muted">Same markup in light and dark.</p>
+</div>
+```
+
+With the derived neutral, `muted` over `surface` reaches 4.5:1 in light and
+dark for any hue. That guarantee does not hold for a `neutral` you pass
+yourself.
+
+The derived scale is registered as `--color-neutral-*`, which replaces
+Tailwind's built-in `neutral` palette for the whole app. The role names
+`--border` and `--muted` are plain variables, so they can clash with a UI kit
+that uses the same names.
+
+A color you define yourself always wins. If you pass a color named `neutral`,
+`success`, `warning`, `danger` or `info`, it is kept as is and the derived one is
+skipped. The roles then use your `neutral`.
+
 ## Contrast
 
 Each scale has a `contrast` color, black or white, whichever has the higher
@@ -418,11 +470,15 @@ type ThemeOptions = {
     target?: 'AA' | 'AAA' | number;
     on?: boolean;
   };
+  neutral?: 'auto' | false;
+  status?: boolean;
+  roles?: boolean;
 };
 ```
 
-`dark` defaults to `'media'` and `gamut` to `'srgb'`. Any other value throws.
-See [Dark mode](#dark-mode), [Gamut](#gamut) and
+`dark` defaults to `'media'` and `gamut` to `'srgb'`; `neutral`, `status` and
+`roles` are off. Any other value throws. See [Dark mode](#dark-mode),
+[Gamut](#gamut), [Semantic colors](#semantic-colors) and
 [Contrast](#apca-targets-and-on-colors).
 
 ### `Theme`
