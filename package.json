@@ -1,6 +1,6 @@
 {
   "name": "tailwindcss-custom-colors",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Turn one color into a Tailwind CSS 4 theme: OKLCH shade scale, dark scale and contrast color, as CSS variables you can swap at runtime.",
   "keywords": [
     "colors",
