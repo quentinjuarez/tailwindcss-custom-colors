@@ -37,6 +37,9 @@
     "*": {
       "runtime": [
         "./dist/cjs/runtime.d.ts"
+      ],
+      "vite": [
+        "./dist/cjs/vite.d.ts"
       ]
     }
   },
@@ -61,6 +64,16 @@
         "default": "./dist/cjs/runtime.js"
       }
     },
+    "./vite": {
+      "import": {
+        "types": "./dist/esm/vite.d.ts",
+        "default": "./dist/esm/vite.js"
+      },
+      "require": {
+        "types": "./dist/cjs/vite.d.ts",
+        "default": "./dist/cjs/vite.js"
+      }
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -77,6 +90,7 @@
     "verify": "yarn lint && yarn format:check && yarn typecheck && yarn test && yarn build && yarn test:dist"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "^5.1.1",
     "culori": "^4.0.2",
