@@ -93,6 +93,53 @@
       input[type='text'] {
         width: 12rem;
       }
+      input[type='number'] {
+        width: 5rem;
+      }
+      input[type='checkbox'] {
+        width: 1rem;
+        height: 1rem;
+        padding: 0;
+      }
+      .trio {
+        display: flex;
+        height: 4rem;
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+      .trio div {
+        flex: 1;
+      }
+      .preview {
+        margin-top: 0.75rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--line);
+      }
+      .preview strong {
+        display: block;
+        font-size: 1.05rem;
+      }
+      .preview p {
+        margin: 0.25rem 0 0.75rem;
+        color: inherit;
+        opacity: 0.75;
+      }
+      .preview .btn,
+      .preview .chip {
+        display: inline-block;
+        font-weight: 600;
+        font-size: 0.8rem;
+        margin-right: 0.5rem;
+      }
+      .preview .btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+      }
+      .preview .chip {
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
+      }
       button {
         cursor: pointer;
         background: var(--accent);
@@ -189,8 +236,16 @@
             <option value="p3">p3</option>
           </select>
         </label>
+        <label><input id="harmony" type="checkbox" /> Harmony</label>
+        <label
+          >Seed
+          <input id="seed" type="number" value="0" min="0" step="1" />
+        </label>
+        <button id="draw" type="button">New draw</button>
       </div>
       <div id="error" class="error" role="status"></div>
+
+      <div id="palette"></div>
 
       <h2>Scales</h2>
       <div id="scales"></div>
@@ -204,13 +259,15 @@
     </main>
 
     <script type="module">
-      import { createTheme } from 'https://cdn.jsdelivr.net/npm/tailwindcss-custom-colors@2.1.0/dist/esm/index.js';
+      import { createTheme } from 'https://cdn.jsdelivr.net/npm/tailwindcss-custom-colors@2.7.0/dist/esm/index.js';
 
       const $ = (id) => document.getElementById(id);
       const picker = $('picker');
       const text = $('text');
       const dark = $('dark');
       const gamut = $('gamut');
+      const harmony = $('harmony');
+      const seed = $('seed');
       let css = '';
 
       function row(label, scale) {
@@ -227,21 +284,40 @@
         return `<div class="mode">${label}, text on 500: ${scale.contrast} (${scale.ratio.toFixed(2)}:1)</div><div class="row">${swatches}</div>`;
       }
 
+      function palette({ primary, secondary, tertiary }) {
+        const [p, s, t] = [primary, secondary, tertiary].map((x) => x.light);
+        const trio = [p, s, t]
+          .map((x) => `<div style="background:${x.steps[500].hex}"></div>`)
+          .join('');
+        return `<h2>Palette</h2><div class="trio">${trio}</div><div class="preview" style="background:${p.steps[50].hex}"><strong style="color:${s.steps[900].hex}">Page title</strong><p style="color:${s.steps[900].hex}">A supporting text to judge the balance.</p><span class="btn" style="background:${p.steps[500].hex};color:${p.contrast}">Action</span><span class="btn" style="border:1px solid ${s.steps[500].hex};color:${s.steps[900].hex}">Secondary</span><span class="chip" style="background:${t.steps[500].hex};color:${t.contrast}">New</span></div>`;
+      }
+
       function render() {
         const value = text.value.trim();
         const flag = dark.value;
         const space = gamut.value;
         try {
+          const seedValue = Number(seed.value) || 0;
           const theme = createTheme(
             { primary: value },
-            { dark: flag === 'none' ? false : flag, gamut: space },
+            {
+              dark: flag === 'none' ? false : flag,
+              gamut: space,
+              ...(harmony.checked ? { harmony: true, seed: seedValue } : {}),
+            },
           );
-          const { light, dark: darkScale } = theme.scales.primary;
+          const { light } = theme.scales.primary;
           css = theme.css;
-          $('scales').innerHTML = row('Light', light) + row('Dark', darkScale);
+          $('scales').innerHTML = Object.entries(theme.scales)
+            .map(
+              ([name, scale]) =>
+                `<h2>${name}</h2>${row('Light', scale.light)}${row('Dark', scale.dark)}`,
+            )
+            .join('');
+          $('palette').innerHTML = harmony.checked ? palette(theme.scales) : '';
           $('css').textContent = css;
           $('cli').textContent =
-            `npx tailwindcss-custom-colors primary=${value}${flag === 'media' ? '' : ` --dark ${flag}`}${space === 'srgb' ? '' : ` --gamut ${space}`} > theme.css`;
+            `npx tailwindcss-custom-colors primary=${value}${flag === 'media' ? '' : ` --dark ${flag}`}${space === 'srgb' ? '' : ` --gamut ${space}`}${harmony.checked ? ` --harmony${seedValue ? ` --seed ${seedValue}` : ''}` : ''} > theme.css`;
           $('error').textContent = '';
           const root = document.documentElement.style;
           root.setProperty('--accent', light.steps[500].hex);
@@ -262,6 +338,13 @@
       });
       dark.addEventListener('change', render);
       gamut.addEventListener('change', render);
+      harmony.addEventListener('change', render);
+      seed.addEventListener('input', render);
+      $('draw').addEventListener('click', () => {
+        harmony.checked = true;
+        seed.value = (Number(seed.value) || 0) + 1;
+        render();
+      });
       $('copy').addEventListener('click', async () => {
         await navigator.clipboard.writeText(css);
         $('copy').textContent = 'Copied';
