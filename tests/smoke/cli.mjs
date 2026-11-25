@@ -43,3 +43,10 @@ assert.match(
   /^color\s+mode\s+step\s+on\s+ratio\s+apca\s+pass\n/,
 );
 assert.equal(report.stdout.trimEnd().split('\n').length, 23);
+
+const roles = spawnSync(process.execPath, [bin, 'a=#940BDF', '--roles'], {
+  encoding: 'utf8',
+});
+assert.equal(roles.status, 0);
+assert.match(roles.stdout, /--surface: var\(--neutral-50\);/);
+assert.match(roles.stdout, /--color-muted: var\(--muted\);/);

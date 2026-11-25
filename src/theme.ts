@@ -32,6 +32,9 @@ export type ThemeOptions = {
   dark?: 'media' | 'class' | false;
   gamut?: Gamut;
   contrast?: ContrastOptions;
+  neutral?: 'auto' | false;
+  status?: boolean;
+  roles?: boolean;
 };
 
 export type ReportRow = {
@@ -56,6 +59,14 @@ export type Theme = {
   report(): ReportRow[];
 };
 
+const show = (value: unknown): string => {
+  try {
+    return String(value);
+  } catch {
+    return typeof value;
+  }
+};
+
 const buildScale = (
   steps: Record<Step, Oklch>,
   method: ContrastMethod,
@@ -78,12 +89,27 @@ const buildScale = (
   };
 };
 
+const ROLES: [string, Step][] = [
+  ['surface', '50'],
+  ['on-surface', '950'],
+  ['border', '200'],
+  ['muted', '600'],
+];
+
+const STATUS_BASES: [string, Oklch][] = [
+  ['success', { l: 0.62, c: 0.17, h: 145 }],
+  ['warning', { l: 0.8, c: 0.16, h: 85 }],
+  ['danger', { l: 0.6, c: 0.2, h: 27 }],
+  ['info', { l: 0.6, c: 0.16, h: 250 }],
+];
+
 const entriesOf = (
   scales: Theme['scales'],
   mode: Mode,
   withOn: boolean,
-): [string, string][] =>
-  Object.entries(scales).flatMap(([name, scale]) => [
+  withRoles: boolean,
+): [string, string][] => [
+  ...Object.entries(scales).flatMap(([name, scale]) => [
     ...STEPS.map((step): [string, string] => [
       `--${name}-${step}`,
       scale[mode].steps[step].oklch,
@@ -95,7 +121,14 @@ const entriesOf = (
           scale[mode].on[step],
         ])
       : []),
-  ]);
+  ]),
+  ...(withRoles
+    ? ROLES.map(([role, step]): [string, string] => [
+        `--${role}`,
+        `var(--neutral-${step})`,
+      ])
+    : []),
+];
 
 const declarations = (entries: [string, string][], indent: string): string =>
   entries.map(([name, value]) => `${indent}${name}: ${value};`).join('\n');
@@ -114,9 +147,7 @@ const resolveTarget = (element?: StyleTarget): StyleTarget => {
 
 const assertMode = (mode: unknown): Mode => {
   if (mode !== 'light' && mode !== 'dark') {
-    throw new Error(
-      `Invalid mode: ${String(mode)}. Expected 'light' or 'dark'`,
-    );
+    throw new Error(`Invalid mode: ${show(mode)}. Expected 'light' or 'dark'`);
   }
   return mode;
 };
@@ -125,7 +156,7 @@ const resolveDark = (dark: unknown): ThemeOptions['dark'] => {
   if (dark === undefined) return 'media';
   if (dark !== 'media' && dark !== 'class' && dark !== false) {
     throw new Error(
-      `Invalid dark option: ${String(dark)}. Expected 'media', 'class' or false`,
+      `Invalid dark option: ${show(dark)}. Expected 'media', 'class' or false`,
     );
   }
   return dark;
@@ -135,7 +166,7 @@ const resolveGamut = (gamut: unknown): Gamut => {
   if (gamut === undefined) return 'srgb';
   if (gamut !== 'srgb' && gamut !== 'p3') {
     throw new Error(
-      `Invalid gamut option: ${String(gamut)}. Expected 'srgb' or 'p3'`,
+      `Invalid gamut option: ${show(gamut)}. Expected 'srgb' or 'p3'`,
     );
   }
   return gamut;
@@ -190,6 +221,26 @@ const resolveContrast = (option: unknown): Contrast => {
   return { method, threshold: target, on };
 };
 
+const resolveNeutral = (neutral: unknown): boolean => {
+  if (neutral === undefined || neutral === false) return false;
+  if (neutral !== 'auto') {
+    throw new Error(
+      `Invalid neutral option: ${show(neutral)}. Expected 'auto' or false`,
+    );
+  }
+  return true;
+};
+
+const resolveFlag = (name: string, value: unknown): boolean => {
+  if (value === undefined) return false;
+  if (typeof value !== 'boolean') {
+    throw new Error(
+      `Invalid ${name} option: ${show(value)}. Expected true or false`,
+    );
+  }
+  return value;
+};
+
 export const createTheme = (
   colors: Record<string, string>,
   options: ThemeOptions = {},
@@ -205,19 +256,48 @@ export const createTheme = (
   const dark = resolveDark(options.dark);
   const gamut = resolveGamut(options.gamut);
   const contrast = resolveContrast(options.contrast);
+  const roles = resolveFlag('roles', options.roles);
+  const neutral = resolveNeutral(options.neutral) || roles;
+  const status = resolveFlag('status', options.status);
   const scales: Theme['scales'] = {};
 
-  for (const [name, input] of inputs) {
-    assertConfigKey(name);
-    const light = lightScale(parseColor(input, gamut), gamut);
+  const addScale = (name: string, base: Oklch) => {
+    const light = lightScale(base, gamut);
     scales[name] = {
       light: buildScale(light, contrast.method),
       dark: buildScale(darkScale(light), contrast.method),
     };
+  };
+
+  let first: Oklch | undefined;
+  for (const [name, input] of inputs) {
+    assertConfigKey(name);
+    const base = parseColor(input, gamut);
+    first ??= base;
+    addScale(name, base);
+  }
+
+  const derived: [string, Oklch][] = [
+    ...(neutral
+      ? [
+          [
+            'neutral',
+            {
+              l: 0.55,
+              c: Math.min(0.02, first!.c),
+              h: Number.isFinite(first!.h) ? first!.h : 0,
+            },
+          ] as [string, Oklch],
+        ]
+      : []),
+    ...(status ? STATUS_BASES : []),
+  ];
+  for (const [name, base] of derived) {
+    if (!Object.hasOwn(scales, name)) addScale(name, base);
   }
 
   const vars = (mode: Mode = 'light'): string =>
-    declarations(entriesOf(scales, assertMode(mode), contrast.on), '');
+    declarations(entriesOf(scales, assertMode(mode), contrast.on, roles), '');
 
   const tokens = Object.keys(scales).flatMap((name) => [
     ...STEPS.map(
@@ -231,28 +311,32 @@ export const createTheme = (
       : []),
   ]);
 
+  const roleTokens = roles
+    ? ROLES.map(([role]) => `  --color-${role}: var(--${role});`)
+    : [];
+
   const blocks = [
-    `:root {\n${declarations(entriesOf(scales, 'light', contrast.on), '  ')}\n}`,
+    `:root {\n${declarations(entriesOf(scales, 'light', contrast.on, roles), '  ')}\n}`,
   ];
   if (dark === 'media') {
     blocks.push(
       `@media (prefers-color-scheme: dark) {\n  :root {\n${declarations(
-        entriesOf(scales, 'dark', contrast.on),
+        entriesOf(scales, 'dark', contrast.on, roles),
         '    ',
       )}\n  }\n}`,
     );
   } else if (dark === 'class') {
     blocks.push(
-      `.dark {\n${declarations(entriesOf(scales, 'dark', contrast.on), '  ')}\n}`,
+      `.dark {\n${declarations(entriesOf(scales, 'dark', contrast.on, roles), '  ')}\n}`,
     );
   }
-  blocks.push(`@theme inline {\n${tokens.join('\n')}\n}`);
+  blocks.push(`@theme inline {\n${[...tokens, ...roleTokens].join('\n')}\n}`);
 
   return {
     css: `${blocks.join('\n\n')}\n`,
     vars,
     apply(element, mode = 'light') {
-      const entries = entriesOf(scales, assertMode(mode), contrast.on);
+      const entries = entriesOf(scales, assertMode(mode), contrast.on, roles);
       const target = resolveTarget(element);
       for (const [name, value] of entries) {
         target.style.setProperty(name, value);
