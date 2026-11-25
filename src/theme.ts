@@ -54,6 +54,7 @@ export type StyleTarget = {
 export type Theme = {
   css: string;
   vars(mode?: Mode): string;
+  variables(mode?: Mode): Record<string, string>;
   apply(element?: StyleTarget, mode?: Mode): void;
   scales: Record<string, { light: Scale; dark: Scale }>;
   report(): ReportRow[];
@@ -299,7 +300,7 @@ export const createTheme = (
   const vars = (mode: Mode = 'light'): string =>
     declarations(entriesOf(scales, assertMode(mode), contrast.on, roles), '');
 
-  const tokens = Object.keys(scales).flatMap((name) => [
+  const tokenLines = Object.keys(scales).flatMap((name) => [
     ...STEPS.map(
       (step) => `  --color-${name}-${step}: var(--${name}-${step});`,
     ),
@@ -330,11 +331,18 @@ export const createTheme = (
       `.dark {\n${declarations(entriesOf(scales, 'dark', contrast.on, roles), '  ')}\n}`,
     );
   }
-  blocks.push(`@theme inline {\n${[...tokens, ...roleTokens].join('\n')}\n}`);
+  blocks.push(
+    `@theme inline {\n${[...tokenLines, ...roleTokens].join('\n')}\n}`,
+  );
 
   return {
     css: `${blocks.join('\n\n')}\n`,
     vars,
+    variables(mode = 'light') {
+      return Object.fromEntries(
+        entriesOf(scales, assertMode(mode), contrast.on, roles),
+      );
+    },
     apply(element, mode = 'light') {
       const entries = entriesOf(scales, assertMode(mode), contrast.on, roles);
       const target = resolveTarget(element);
