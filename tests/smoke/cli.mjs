@@ -83,3 +83,18 @@ try {
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }
+
+const harmony = spawnSync(
+  process.execPath,
+  [bin, 'a=#0B6FDF', '--harmony', '--seed', '2'],
+  { encoding: 'utf8' },
+);
+assert.equal(harmony.status, 0);
+assert.match(harmony.stdout, /--secondary-500: oklch\(/);
+assert.match(harmony.stdout, /--tertiary-500: oklch\(/);
+
+const orphanSeed = spawnSync(process.execPath, [bin, 'a=red', '--seed', '2'], {
+  encoding: 'utf8',
+});
+assert.equal(orphanSeed.status, 1);
+assert.equal(orphanSeed.stderr, '--seed needs --harmony\n');

@@ -18,7 +18,7 @@ const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
@@ -34,6 +34,8 @@ Options:
   --format <f>     output format: css (default), json, scss or tokens
   --out <path>     write the output to a file instead of stdout
   --check          with --out, fail when the file is out of date
+  --harmony        derive secondary and tertiary colors
+  --seed <value>   seed for --harmony: a number or any text
   --report         print a contrast report instead of CSS
   --help           show this help
 
@@ -126,6 +128,8 @@ export const run = (argv: string[]): CliResult => {
         neutral: { type: 'boolean' },
         status: { type: 'boolean' },
         roles: { type: 'boolean' },
+        harmony: { type: 'boolean' },
+        seed: { type: 'string' },
         format: { type: 'string' },
         out: { type: 'string' },
         check: { type: 'boolean' },
@@ -143,7 +147,7 @@ export const run = (argv: string[]): CliResult => {
 
   if (positionals.length === 0) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]',
     );
   }
 
@@ -164,6 +168,11 @@ export const run = (argv: string[]): CliResult => {
   }
   if (values.check && values.out === undefined) {
     return fail('--check needs --out');
+  }
+
+  if (values.seed !== undefined) {
+    if (!values.harmony) return fail('--seed needs --harmony');
+    if (values.seed === '') return fail('--seed needs a value');
   }
 
   let dark: ThemeOptions['dark'] = 'media';
@@ -232,6 +241,8 @@ export const run = (argv: string[]): CliResult => {
       neutral: values.neutral ? 'auto' : false,
       status: values.status === true,
       roles: values.roles === true,
+      harmony: values.harmony === true,
+      ...(values.seed === undefined ? {} : { seed: values.seed }),
     });
     const output = values.report
       ? formatReport(theme.report())
