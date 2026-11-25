@@ -16,6 +16,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [Quick start](#quick-start)
 - [CLI](#cli)
 - [Generated output](#generated-output)
+- [Formats and CI](#formats-and-ci)
 - [Accepted input](#accepted-input)
 - [Gamut](#gamut)
 - [Dark mode](#dark-mode)
@@ -128,20 +129,23 @@ Then import it:
 @import './theme.css';
 ```
 
-| Flag              | What it does                                                          |
-| ----------------- | --------------------------------------------------------------------- |
-| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)           |
-| `--dark class`    | Dark variables under a `.dark` selector                               |
-| `--dark none`     | No dark variables                                                     |
-| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                         |
-| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)   |
-| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number  |
-| `--on`            | Also emit one on-color variable per step                              |
-| `--neutral`       | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors) |
-| `--status`        | Add `success`, `warning`, `danger` and `info` scales                  |
-| `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables       |
-| `--report`        | Print a contrast report table instead of CSS                          |
-| `--help`          | Show the usage                                                        |
+| Flag              | What it does                                                                             |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)                              |
+| `--dark class`    | Dark variables under a `.dark` selector                                                  |
+| `--dark none`     | No dark variables                                                                        |
+| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                                            |
+| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)                      |
+| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number                     |
+| `--on`            | Also emit one on-color variable per step                                                 |
+| `--neutral`       | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors)                    |
+| `--status`        | Add `success`, `warning`, `danger` and `info` scales                                     |
+| `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables                          |
+| `--format json`   | Print `css` (default), `json`, `scss` or `tokens`, see [Formats and CI](#formats-and-ci) |
+| `--out theme.css` | Write the output to a file instead of stdout                                             |
+| `--check`         | With `--out`, exit 1 when the file is out of date                                        |
+| `--report`        | Print a contrast report table instead of CSS                                             |
+| `--help`          | Show the usage                                                                           |
 
 On invalid input the CLI prints a one line error to stderr and exits with
 code 1.
@@ -195,6 +199,39 @@ Three blocks:
 
 Variables hold `oklch()` values with no fallback. If you target a browser
 without OKLCH support, use the `hex` values from `theme.scales`.
+
+## Formats and CI
+
+`--format` picks what the CLI prints. `css` is the default.
+
+| Format   | Output                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------- |
+| `css`    | The stylesheet from [Generated output](#generated-output)                                               |
+| `json`   | `{ "light": { "--primary-50": "oklch(...)" }, "dark": { ... } }`                                        |
+| `scss`   | Two maps, `$theme-light` and `$theme-dark`, with keys such as `"primary-50"`                            |
+| `tokens` | Design tokens: `{ "primary": { "50": { "$type": "color", "$value": { "colorSpace": "srgb", ... } } } }` |
+
+`dark` is left out of `json`, `scss` and `tokens` with `--dark none`. The
+`tokens` format follows the stable Design Tokens format (2025.10): each step and
+the contrast color is an sRGB color object with `components` and `hex`, and the
+dark hex sits under `$extensions["tailwindcss-custom-colors"].dark`. It carries
+neither wide gamut precision nor the roles and on-colors: use `json` for those.
+
+`--out` writes the file, creates missing folders and prints nothing:
+
+```bash
+npx tailwindcss-custom-colors primary=#940BDF --out src/theme.css
+```
+
+`--check` compares the output with the file and never writes. It exits with 0
+when they match and with 1 otherwise, so a CI step can catch a stale file:
+
+```bash
+npx tailwindcss-custom-colors primary=#940BDF --out src/theme.css --check
+```
+
+The comparison is exact, line endings included. `--report` cannot be combined
+with `--format`, and a blank `--out` path is rejected.
 
 ## Accepted input
 
@@ -487,6 +524,7 @@ type ThemeOptions = {
 type Theme = {
   css: string;
   vars(mode?: 'light' | 'dark'): string;
+  variables(mode?: 'light' | 'dark'): Record<string, string>;
   apply(element?: StyleTarget, mode?: 'light' | 'dark'): void;
   scales: Record<string, { light: Scale; dark: Scale }>;
   report(): ReportRow[];
@@ -497,11 +535,12 @@ type Theme = {
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `css`                  | The full stylesheet shown in [Generated output](#generated-output).                                                                                                              |
 | `vars(mode)`           | The variable declarations only, one per line, for `mode` (default `'light'`). No selector around them.                                                                           |
+| `variables(mode)`      | The same variables as `vars`, as an object of `'--name': value`, in the same order.                                                                                              |
 | `apply(element, mode)` | Sets the variables of `mode` (default `'light'`) as inline styles on `element`, by default `document.documentElement`. Throws when there is no element and no global `document`. |
 | `report()`             | A contrast row per color, mode and step, see [Contrast](#apca-targets-and-on-colors).                                                                                            |
 | `scales`               | The computed values, per color name and mode.                                                                                                                                    |
 
-`vars` and `apply` throw on a mode other than `'light'` or `'dark'`.
+`vars`, `variables` and `apply` throw on a mode other than `'light'` or `'dark'`.
 `apply()` only sets variables: it does not remove the ones an earlier call set
 for other color names.
 

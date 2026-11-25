@@ -1,5 +1,8 @@
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { formatTheme, type Format } from './format.js';
 import {
   createTheme,
   type ContrastOptions,
@@ -15,7 +18,7 @@ const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--report]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
@@ -28,6 +31,9 @@ Options:
   --neutral        add a tinted neutral scale
   --status         add success, warning, danger and info scales
   --roles          add --surface, --on-surface, --border and --muted
+  --format <f>     output format: css (default), json, scss or tokens
+  --out <path>     write the output to a file instead of stdout
+  --check          with --out, fail when the file is out of date
   --report         print a contrast report instead of CSS
   --help           show this help
 
@@ -61,6 +67,12 @@ const formatReport = (rows: ReportRow[]): string => {
     .join('\n')}\n`;
 };
 
+const FORMATS: Format[] = ['css', 'json', 'scss', 'tokens'];
+
+const reasonOf = (error: unknown): string =>
+  (error as NodeJS.ErrnoException).code ??
+  ((error as Error).message ?? String(error)).split('\n')[0]!;
+
 const fail = (message: string): CliResult => ({
   stdout: '',
   stderr: `${message}\n`,
@@ -69,6 +81,34 @@ const fail = (message: string): CliResult => ({
 
 const firstSentence = (message: string): string =>
   (message.split('\n')[0] ?? message).split('. ')[0] ?? message;
+
+const toFile = (path: string, output: string, check: boolean): CliResult => {
+  if (check) {
+    let existing: string;
+    try {
+      existing = readFileSync(path, 'utf8');
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return fail(
+          `${path} does not exist. Run the command without --check to create it`,
+        );
+      }
+      return fail(`Cannot read ${path}: ${reasonOf(error)}`);
+    }
+    return existing === output
+      ? { stdout: '', stderr: '', code: 0 }
+      : fail(
+          `${path} is out of date. Run the command without --check to update it`,
+        );
+  }
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, output);
+  } catch (error) {
+    return fail(`Cannot write ${path}: ${reasonOf(error)}`);
+  }
+  return { stdout: '', stderr: '', code: 0 };
+};
 
 export const run = (argv: string[]): CliResult => {
   let parsed;
@@ -86,6 +126,9 @@ export const run = (argv: string[]): CliResult => {
         neutral: { type: 'boolean' },
         status: { type: 'boolean' },
         roles: { type: 'boolean' },
+        format: { type: 'string' },
+        out: { type: 'string' },
+        check: { type: 'boolean' },
         report: { type: 'boolean' },
         help: { type: 'boolean' },
       },
@@ -100,8 +143,27 @@ export const run = (argv: string[]): CliResult => {
 
   if (positionals.length === 0) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--report]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]',
     );
+  }
+
+  let format: Format = 'css';
+  if (values.format !== undefined) {
+    if (!FORMATS.includes(values.format as Format)) {
+      return fail(
+        `Invalid --format value: ${values.format}. Expected css, json, scss or tokens`,
+      );
+    }
+    format = values.format as Format;
+    if (values.report) {
+      return fail('--report cannot be combined with --format');
+    }
+  }
+  if (values.out !== undefined && values.out.trim() === '') {
+    return fail('--out needs a path');
+  }
+  if (values.check && values.out === undefined) {
+    return fail('--check needs --out');
   }
 
   let dark: ThemeOptions['dark'] = 'media';
@@ -171,11 +233,13 @@ export const run = (argv: string[]): CliResult => {
       status: values.status === true,
       roles: values.roles === true,
     });
-    return {
-      stdout: values.report ? formatReport(theme.report()) : theme.css,
-      stderr: '',
-      code: 0,
-    };
+    const output = values.report
+      ? formatReport(theme.report())
+      : formatTheme(theme, format, dark !== false);
+    if (values.out === undefined) {
+      return { stdout: output, stderr: '', code: 0 };
+    }
+    return toFile(values.out, output, values.check === true);
   } catch (error) {
     return fail((error as Error).message);
   }
