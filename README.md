@@ -23,6 +23,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [Dark mode](#dark-mode)
 - [Runtime kit](#runtime-kit)
 - [Semantic colors](#semantic-colors)
+- [Harmony](#harmony)
 - [Contrast](#contrast)
   - [APCA, targets and on-colors](#apca-targets-and-on-colors)
 - [API](#api)
@@ -141,6 +142,8 @@ Then import it:
 | `--on`            | Also emit one on-color variable per step                                                 |
 | `--neutral`       | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors)                    |
 | `--status`        | Add `success`, `warning`, `danger` and `info` scales                                     |
+| `--harmony`       | Derive `secondary` and `tertiary` colors, see [Harmony](#harmony)                        |
+| `--seed 3`        | With `--harmony`, pick another palette: a number or any text                             |
 | `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables                          |
 | `--format json`   | Print `css` (default), `json`, `scss` or `tokens`, see [Formats and CI](#formats-and-ci) |
 | `--out theme.css` | Write the output to a file instead of stdout                                             |
@@ -482,6 +485,66 @@ A color you define yourself always wins. If you pass a color named `neutral`,
 `success`, `warning`, `danger` or `info`, it is kept as is and the derived one is
 skipped. The roles then use your `neutral`.
 
+## Harmony
+
+`harmony: true` derives two more colors from your first one, named `secondary`
+and `tertiary`, so a single brand color gives a palette that reads as designed.
+
+```js
+createTheme({ primary: '#0B6FDF' }, { harmony: true });
+```
+
+Each color has its own role, and the three are staged in lightness, from deep
+to mid to light, instead of three flat blocks of the same weight:
+
+| Your color is                | `secondary` is | `tertiary` is |
+| ---------------------------- | -------------- | ------------- |
+| mid (lightness 0.45 to 0.72) | deep           | light         |
+| dark (lightness under 0.45)  | mid            | light         |
+| light (lightness over 0.72)  | deep           | mid           |
+
+Lightness is the OKLCH `L`. The roles switch at the two limits, so two nearly
+identical colors on each side of 0.45 or 0.72 get different palettes. Each role
+also keeps a lightness gap of at least 0.1 from your color.
+
+- When the secondary is deeper than your color, it follows your hue with a
+  slight shift toward cold, like a navy next to a blue. Warm hues (roughly
+  yellow to lime and orange) turn into brick or mud when deepened, and so do
+  they when they are dark, so they get a cool color instead, like a navy next
+  to a yellow. In the other cases the secondary stays within 20 degrees of your
+  hue.
+- The tertiary is the single accent: a hue away from the brand, chosen so that
+  it stays apart from the other two and avoids the muddy yellow greens.
+- Chroma stays moderate, so a very saturated brand does not give saturated
+  supporting colors, and a dull brand still gets real colors.
+- A colorless brand (black, white, gray) has no hue to follow: the seed draws
+  one from a short list of pleasant hues.
+
+The result is deterministic. The same color and seed always give the same
+palette, and the default seed is `0`, so it only depends on your color. Pass
+another `seed`, a number or any text, to try a different palette. An integer
+and its text give the same palette (`3` and `'3'`):
+
+```js
+createTheme({ primary: '#0B6FDF' }, { harmony: true, seed: 3 });
+```
+
+```bash
+npx tailwindcss-custom-colors primary=#0B6FDF --harmony --seed 3
+```
+
+Write a negative seed as `--seed=-2`. The CLI needs `--harmony` with `--seed`,
+while the API ignores a `seed` when `harmony` is off.
+
+The palette derives from the first color only. A color you name `secondary` or
+`tertiary` always wins and is kept as is. The other one is still derived, and a
+derived `tertiary` stays apart from a `secondary` you define. The
+derived scales get a dark mirror, `contrast` and `report()` rows like any other
+color, and they sit before `neutral` and the status colors.
+
+The palette for a given color and seed may be retuned in a later minor release.
+To pin one, pass your own `secondary` and `tertiary` colors.
+
 ## Contrast
 
 Each scale has a `contrast` color, black or white, whichever has the higher
@@ -572,11 +635,13 @@ type ThemeOptions = {
   neutral?: 'auto' | false;
   status?: boolean;
   roles?: boolean;
+  harmony?: boolean;
+  seed?: number | string;
 };
 ```
 
-`dark` defaults to `'media'` and `gamut` to `'srgb'`; `neutral`, `status` and
-`roles` are off. Any other value throws. See [Dark mode](#dark-mode),
+`dark` defaults to `'media'` and `gamut` to `'srgb'`; `neutral`, `status`,
+`roles` and `harmony` are off, and `seed` is `0`. Any other value throws. See [Dark mode](#dark-mode),
 [Gamut](#gamut), [Semantic colors](#semantic-colors) and
 [Contrast](#apca-targets-and-on-colors).
 

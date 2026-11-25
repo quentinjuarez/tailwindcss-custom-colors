@@ -271,3 +271,42 @@ describe('semantic flags', () => {
     }
   });
 });
+
+describe('harmony flags', () => {
+  it('maps --harmony to the option', () => {
+    const result = run(['primary=#0B6FDF', '--harmony']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      createTheme({ primary: '#0B6FDF' }, { harmony: true }).css,
+    );
+    expect(result.stdout).toContain('--tertiary-500:');
+  });
+
+  it('passes an integer seed as a number and other text as a string', () => {
+    const colors = { primary: '#0B6FDF' };
+    expect(run(['primary=#0B6FDF', '--harmony', '--seed', '3']).stdout).toBe(
+      createTheme(colors, { harmony: true, seed: 3 }).css,
+    );
+    expect(run(['primary=#0B6FDF', '--harmony', '--seed=-2']).stdout).toBe(
+      createTheme(colors, { harmony: true, seed: -2 }).css,
+    );
+    expect(run(['primary=#0B6FDF', '--harmony', '--seed', 'abc']).stdout).toBe(
+      createTheme(colors, { harmony: true, seed: 'abc' }).css,
+    );
+  });
+
+  it('rejects --seed without --harmony and an empty seed', () => {
+    expect(run(['primary=#0B6FDF', '--seed', '3']).stderr).toBe(
+      '--seed needs --harmony\n',
+    );
+    expect(run(['primary=#0B6FDF', '--harmony', '--seed=']).stderr).toBe(
+      '--seed needs a value\n',
+    );
+  });
+
+  it('lists the flags in the usage', () => {
+    const { stdout } = run(['--help']);
+    expect(stdout).toContain('--harmony');
+    expect(stdout).toContain('--seed');
+  });
+});

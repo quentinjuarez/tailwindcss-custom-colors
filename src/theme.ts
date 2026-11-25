@@ -11,6 +11,7 @@ import {
   type Oklch,
 } from './color/convert.js';
 import { parseColor } from './color/parse.js';
+import { deriveHarmony } from './harmony.js';
 import { assertConfigKey } from './names.js';
 import {
   darkScale,
@@ -35,6 +36,8 @@ export type ThemeOptions = {
   neutral?: 'auto' | false;
   status?: boolean;
   roles?: boolean;
+  harmony?: boolean;
+  seed?: number | string;
 };
 
 export type ReportRow = {
@@ -242,6 +245,19 @@ const resolveFlag = (name: string, value: unknown): boolean => {
   return value;
 };
 
+const resolveSeed = (seed: unknown): number | string => {
+  if (seed === undefined) return 0;
+  if (
+    typeof seed === 'string' ||
+    (typeof seed === 'number' && Number.isFinite(seed))
+  ) {
+    return seed;
+  }
+  throw new Error(
+    `Invalid seed option: ${typeof seed === 'bigint' ? `${seed}n` : show(seed)}. Expected a number or a string`,
+  );
+};
+
 export const createTheme = (
   colors: Record<string, string>,
   options: ThemeOptions = {},
@@ -260,6 +276,8 @@ export const createTheme = (
   const roles = resolveFlag('roles', options.roles);
   const neutral = resolveNeutral(options.neutral) || roles;
   const status = resolveFlag('status', options.status);
+  const harmony = resolveFlag('harmony', options.harmony);
+  const seed = resolveSeed(options.seed);
   const scales: Theme['scales'] = {};
 
   const addScale = (name: string, base: Oklch) => {
@@ -271,14 +289,25 @@ export const createTheme = (
   };
 
   let first: Oklch | undefined;
+  let chosenSecondary: Oklch | undefined;
   for (const [name, input] of inputs) {
     assertConfigKey(name);
     const base = parseColor(input, gamut);
     first ??= base;
+    if (name === 'secondary') chosenSecondary = base;
     addScale(name, base);
   }
 
+  const harmonic = harmony
+    ? deriveHarmony(first!, oklchToHex(first!), seed, gamut, chosenSecondary)
+    : undefined;
   const derived: [string, Oklch][] = [
+    ...(harmonic
+      ? ([
+          ['secondary', harmonic.secondary],
+          ['tertiary', harmonic.tertiary],
+        ] as [string, Oklch][])
+      : []),
     ...(neutral
       ? [
           [
