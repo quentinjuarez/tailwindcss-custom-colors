@@ -30,7 +30,7 @@ export type ContrastOptions = {
 };
 
 export type ThemeOptions = {
-  dark?: 'media' | 'class' | false;
+  dark?: 'media' | 'class' | 'light-dark' | false;
   gamut?: Gamut;
   contrast?: ContrastOptions;
   neutral?: 'auto' | false;
@@ -158,9 +158,14 @@ const assertMode = (mode: unknown): Mode => {
 
 const resolveDark = (dark: unknown): ThemeOptions['dark'] => {
   if (dark === undefined) return 'media';
-  if (dark !== 'media' && dark !== 'class' && dark !== false) {
+  if (
+    dark !== 'media' &&
+    dark !== 'class' &&
+    dark !== 'light-dark' &&
+    dark !== false
+  ) {
     throw new Error(
-      `Invalid dark option: ${show(dark)}. Expected 'media', 'class' or false`,
+      `Invalid dark option: ${show(dark)}. Expected 'media', 'class', 'light-dark' or false`,
     );
   }
   return dark;
@@ -345,9 +350,28 @@ export const createTheme = (
     ? ROLES.map(([role]) => `  --color-${role}: var(--${role});`)
     : [];
 
-  const blocks = [
-    `:root {\n${declarations(entriesOf(scales, 'light', contrast.on, roles), '  ')}\n}`,
-  ];
+  const blocks: string[] = [];
+  if (dark === 'light-dark') {
+    const darkEntries = entriesOf(scales, 'dark', contrast.on, roles);
+    const merged = entriesOf(scales, 'light', contrast.on, roles).map(
+      ([name, value], index): [string, string] => {
+        const other = darkEntries[index]![1];
+        return [
+          name,
+          value === other ? value : `light-dark(${value}, ${other})`,
+        ];
+      },
+    );
+    blocks.push(
+      `:root {\n  color-scheme: light dark;\n${declarations(merged, '  ')}\n}`,
+      '.light {\n  color-scheme: light;\n}',
+      '.dark {\n  color-scheme: dark;\n}',
+    );
+  } else {
+    blocks.push(
+      `:root {\n${declarations(entriesOf(scales, 'light', contrast.on, roles), '  ')}\n}`,
+    );
+  }
   if (dark === 'media') {
     blocks.push(
       `@media (prefers-color-scheme: dark) {\n  :root {\n${declarations(

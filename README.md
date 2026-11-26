@@ -132,27 +132,28 @@ Then import it:
 @import './theme.css';
 ```
 
-| Flag              | What it does                                                                             |
-| ----------------- | ---------------------------------------------------------------------------------------- |
-| `--dark media`    | Dark variables under `prefers-color-scheme: dark` (default)                              |
-| `--dark class`    | Dark variables under a `.dark` selector                                                  |
-| `--dark none`     | No dark variables                                                                        |
-| `--gamut p3`      | Keep Display P3 colors, `srgb` is the default                                            |
-| `--contrast apca` | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)                      |
-| `--target AAA`    | Pass threshold used by `--report`: `AA` (default), `AAA` or a number                     |
-| `--on`            | Also emit one on-color variable per step                                                 |
-| `--neutral`       | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors)                    |
-| `--status`        | Add `success`, `warning`, `danger` and `info` scales                                     |
-| `--harmony`       | Derive `secondary` and `tertiary` colors, see [Harmony](#harmony)                        |
-| `--seed 3`        | With `--harmony`, pick another palette: a number or any text                             |
-| `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables                          |
-| `--format json`   | Print `css` (default), `json`, `scss` or `tokens`, see [Formats and CI](#formats-and-ci) |
-| `--out theme.css` | Write the output to a file instead of stdout                                             |
-| `--config x.json` | Read the settings from a JSON file, see [Config file](#config-file)                      |
-| `--watch`         | With a config file and `out`, write again on every config change                         |
-| `--check`         | With `--out`, exit 1 when the file is out of date                                        |
-| `--report`        | Print a contrast report table instead of CSS                                             |
-| `--help`          | Show the usage                                                                           |
+| Flag                | What it does                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| `--dark media`      | Dark variables under `prefers-color-scheme: dark` (default)                                      |
+| `--dark class`      | Dark variables under a `.dark` selector                                                          |
+| `--dark light-dark` | One `light-dark()` per variable, see [Dark mode](#dark-mode)                                     |
+| `--dark none`       | No dark variables                                                                                |
+| `--gamut p3`        | Keep Display P3 colors, `srgb` is the default                                                    |
+| `--contrast apca`   | Pick on-colors with APCA instead of WCAG, see [Contrast](#contrast)                              |
+| `--target AAA`      | Pass threshold used by `--report`: `AA` (default), `AAA` or a number                             |
+| `--on`              | Also emit one on-color variable per step                                                         |
+| `--neutral`         | Add a tinted `neutral` scale, see [Semantic colors](#semantic-colors)                            |
+| `--status`          | Add `success`, `warning`, `danger` and `info` scales                                             |
+| `--harmony`         | Derive `secondary` and `tertiary` colors, see [Harmony](#harmony)                                |
+| `--seed 3`          | With `--harmony`, pick another palette: a number or any text                                     |
+| `--roles`           | Add the `surface`, `on-surface`, `border` and `muted` variables                                  |
+| `--format json`     | Print `css` (default), `json`, `scss`, `tokens` or `html`, see [Formats and CI](#formats-and-ci) |
+| `--out theme.css`   | Write the output to a file instead of stdout                                                     |
+| `--config x.json`   | Read the settings from a JSON file, see [Config file](#config-file)                              |
+| `--watch`           | With a config file and `out`, write again on every config change                                 |
+| `--check`           | With `--out`, exit 1 when the file is out of date                                                |
+| `--report`          | Print a contrast report table instead of CSS                                                     |
+| `--help`            | Show the usage                                                                                   |
 
 On invalid input the CLI prints a one line error to stderr and exits with
 code 1.
@@ -216,13 +217,24 @@ without OKLCH support, use the `hex` values from `theme.scales`.
 | `css`    | The stylesheet from [Generated output](#generated-output)                                               |
 | `json`   | `{ "light": { "--primary-50": "oklch(...)" }, "dark": { ... } }`                                        |
 | `scss`   | Two maps, `$theme-light` and `$theme-dark`, with keys such as `"primary-50"`                            |
+| `html`   | One self-contained preview page, see below                                                              |
 | `tokens` | Design tokens: `{ "primary": { "50": { "$type": "color", "$value": { "colorSpace": "srgb", ... } } } }` |
 
-`dark` is left out of `json`, `scss` and `tokens` with `--dark none`. The
+`dark` is left out of `json`, `scss`, `tokens` and `html` with `--dark none`. The
 `tokens` format follows the stable Design Tokens format (2025.10): each step and
 the contrast color is an sRGB color object with `components` and `hex`, and the
 dark hex sits under `$extensions["tailwindcss-custom-colors"].dark`. It carries
 neither wide gamut precision nor the roles and on-colors: use `json` for those.
+
+`--format html` writes a preview page you can open in a browser, with no server
+and no network: every scale in light and dark with its hex and the text color
+that goes on it, the three first colors side by side, a small interface card in
+light and dark, and the generated CSS. Add `--watch` with a config file to write
+it again at every change, and reload the page.
+
+```bash
+npx tailwindcss-custom-colors primary=#0B6FDF --harmony --format html --out preview.html
+```
 
 `--out` writes the file, creates missing folders and prints nothing:
 
@@ -434,6 +446,7 @@ Pick a strategy with the `dark` option (`--dark` on the CLI):
 | ----------------- | ----------------------------------------------- |
 | `'media'` default | `@media (prefers-color-scheme: dark) { :root }` |
 | `'class'`         | `.dark`                                         |
+| `'light-dark'`    | one `light-dark(light, dark)` per variable      |
 | `false`           | nowhere, light only                             |
 
 ```js
@@ -442,6 +455,23 @@ createTheme({ primary: '#940BDF' }, { dark: 'class' });
 
 Because the dark values live in the same variables, `bg-primary-500` adapts on
 its own. You do not need `dark:` variants for theme colors.
+
+`'light-dark'` writes one declaration per variable, such as
+`--primary-50: light-dark(oklch(...), oklch(...))`, with `color-scheme: light dark`
+on `:root`, and two small rules, `.light` and `.dark`, that force a mode with a
+class. A value that is the same in both modes, like `--primary-500` or the
+contrast color, stays a plain value. It needs a recent browser (Chrome 123,
+Firefox 120, Safari 17.5). Tailwind 4 builds for older browsers, so its CSS
+compiler rewrites `light-dark()` into its own fallback, which follows the
+operating system and the `.light` and `.dark` classes but not an inline
+`color-scheme` style. The [runtime kit](#runtime-kit) sets both classes, so it
+works with either.
+
+Force a mode with `.light` or `.dark` on `<html>`. In a built Tailwind stylesheet,
+a class on a nested element changes nothing, because the fallback resolves the
+colors on `:root` and children inherit the result. The dev server, which keeps
+the native function, does handle it. For a dark island inside a light page, use
+`dark: 'class'`.
 
 `apply(element, 'dark')` writes the dark values as inline styles on the
 element. Inline variables beat the stylesheet, so a forced dark `apply` wins
@@ -457,9 +487,12 @@ A small opt-in module for the browser: switch between light, dark and system,
 remember the choice and avoid a flash on first paint. It has no dependency and
 lives behind its own entry point, so it costs nothing unless you import it.
 
-It toggles the `dark` class and the `color-scheme` property on `<html>`, so it
-needs `dark: 'class'`. With `'media'` the OS decides and a class cannot force a
-mode. Tailwind 4 needs this line once to make `dark:` utilities follow the
+It toggles the `dark` and `light` classes and the `color-scheme` property on
+`<html>`, so it needs `dark: 'class'` or `dark: 'light-dark'`. With `'media'` the
+OS decides and a class cannot force a mode. The `light` class is new in 2.9, and
+it is only used by `'light-dark'`: if your own code uses a `light` class on
+`<html>`, or if you allow the inline script from `themeScript()` in a Content
+Security Policy with a hash, recompute the hash and check that class. Tailwind 4 needs this line once to make `dark:` utilities follow the
 class:
 
 ```css
@@ -695,7 +728,7 @@ or an invalid `dark` or `gamut` option.
 
 ```ts
 type ThemeOptions = {
-  dark?: 'media' | 'class' | false;
+  dark?: 'media' | 'class' | 'light-dark' | false;
   gamut?: 'srgb' | 'p3';
   contrast?: {
     method?: 'wcag' | 'apca';

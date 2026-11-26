@@ -24,15 +24,16 @@ const CONFIG_NAME = 'tailwindcss-custom-colors.config.json';
 const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   media: 'media',
   class: 'class',
+  'light-dark': 'light-dark',
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report] [--config <path>] [--watch]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
 Options:
-  --dark <mode>    dark mode strategy: media (default), class or none
+  --dark <mode>    dark mode strategy: media (default), class, light-dark or none
   --gamut <space>  color gamut: srgb (default) or p3
   --contrast <m>   contrast method: wcag (default) or apca
   --target <t>     pass threshold for --report: AA (default), AAA or a number
@@ -40,7 +41,7 @@ Options:
   --neutral        add a tinted neutral scale
   --status         add success, warning, danger and info scales
   --roles          add --surface, --on-surface, --border and --muted
-  --format <f>     output format: css (default), json, scss or tokens
+  --format <f>     output format: css (default), json, scss, tokens or html
   --out <path>     write the output to a file instead of stdout
   --check          with --out, fail when the file is out of date
   --harmony        derive secondary and tertiary colors
@@ -83,7 +84,7 @@ const formatReport = (rows: ReportRow[]): string => {
     .join('\n')}\n`;
 };
 
-const FORMATS: Format[] = ['css', 'json', 'scss', 'tokens'];
+const FORMATS: Format[] = ['css', 'json', 'scss', 'tokens', 'html'];
 
 const reasonOf = (error: unknown): string =>
   (error as NodeJS.ErrnoException).code ??
@@ -174,7 +175,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
 
   if (positionals.length === 0 && configPath === undefined) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report] [--config <path>] [--watch]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]',
     );
   }
 
@@ -191,7 +192,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
   if (values.format !== undefined) {
     if (!FORMATS.includes(values.format as Format)) {
       return fail(
-        `Invalid --format value: ${values.format}. Expected css, json, scss or tokens`,
+        `Invalid --format value: ${values.format}. Expected css, json, scss, tokens or html`,
       );
     }
     format = values.format as Format;
@@ -229,7 +230,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
   if (values.dark !== undefined) {
     if (!Object.hasOwn(DARK_MODES, values.dark)) {
       return fail(
-        `Invalid --dark value: ${values.dark}. Expected media, class or none`,
+        `Invalid --dark value: ${values.dark}. Expected media, class, light-dark or none`,
       );
     }
     dark = DARK_MODES[values.dark];

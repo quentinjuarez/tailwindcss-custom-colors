@@ -153,7 +153,7 @@ describe('createTheme', () => {
       } as unknown as ThemeOptions),
     ).toThrow(
       new Error(
-        `Invalid dark option: ${printed}. Expected 'media', 'class' or false`,
+        `Invalid dark option: ${printed}. Expected 'media', 'class', 'light-dark' or false`,
       ),
     );
   });

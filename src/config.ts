@@ -32,7 +32,7 @@ const KEYS = [
   'out',
 ];
 
-const FORMATS = ['css', 'json', 'scss', 'tokens'];
+const FORMATS = ['css', 'json', 'scss', 'tokens', 'html'];
 
 const exists = (path: string): boolean => {
   try {
@@ -105,9 +105,10 @@ export const loadConfig = (path: string): CliConfig => {
     dark !== undefined &&
     dark !== 'media' &&
     dark !== 'class' &&
+    dark !== 'light-dark' &&
     dark !== false
   ) {
-    return invalid('dark must be "media", "class" or false');
+    return invalid('dark must be "media", "class", "light-dark" or false');
   }
   if (gamut !== undefined && gamut !== 'srgb' && gamut !== 'p3') {
     return invalid('gamut must be "srgb" or "p3"');
@@ -131,7 +132,7 @@ export const loadConfig = (path: string): CliConfig => {
     return invalid('contrast must be an object');
   }
   if (format !== undefined && !FORMATS.includes(format as string)) {
-    return invalid('format must be css, json, scss or tokens');
+    return invalid('format must be css, json, scss, tokens or html');
   }
   if (out !== undefined && (typeof out !== 'string' || out.trim() === '')) {
     return invalid('out must be a non empty string');

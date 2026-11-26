@@ -150,3 +150,28 @@ try {
 } finally {
   rmSync(watchDir, { recursive: true, force: true });
 }
+
+const lightDark = spawnSync(
+  process.execPath,
+  [bin, 'a=#0B6FDF', '--dark', 'light-dark'],
+  { encoding: 'utf8' },
+);
+assert.equal(lightDark.status, 0);
+assert.match(lightDark.stdout, /color-scheme: light dark;/);
+assert.match(lightDark.stdout, /--a-50: light-dark\(oklch\(/);
+
+const previewDir = mkdtempSync(join(tmpdir(), 'tcc-smoke-preview-'));
+try {
+  const page = join(previewDir, 'preview.html');
+  const preview = spawnSync(
+    process.execPath,
+    [bin, 'a=#0B6FDF', '--format', 'html', '--out', page],
+    { encoding: 'utf8' },
+  );
+  assert.equal(preview.status, 0);
+  const html = readFileSync(page, 'utf8');
+  assert.match(html, /^<!doctype html>/);
+  assert.match(html, /<title>tailwindcss-custom-colors preview<\/title>/);
+} finally {
+  rmSync(previewDir, { recursive: true, force: true });
+}

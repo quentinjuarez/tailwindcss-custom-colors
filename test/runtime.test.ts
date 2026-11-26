@@ -58,9 +58,11 @@ describe('applyScheme', () => {
     const el = fakeElement();
     expect(applyScheme('dark', el)).toBe('dark');
     expect(el.classes.has('dark')).toBe(true);
+    expect(el.classes.has('light')).toBe(false);
     expect(el.style.colorScheme).toBe('dark');
     expect(applyScheme('light', el)).toBe('light');
     expect(el.classes.has('dark')).toBe(false);
+    expect(el.classes.has('light')).toBe(true);
     expect(el.style.colorScheme).toBe('light');
   });
 
@@ -202,7 +204,11 @@ describe('themeScript', () => {
       matchMedia: () => ({ matches: dark }),
       document: { documentElement: el },
     });
-    return { dark: el.classes.has('dark'), colorScheme: el.style.colorScheme };
+    return {
+      dark: el.classes.has('dark'),
+      light: el.classes.has('light'),
+      colorScheme: el.style.colorScheme,
+    };
   };
 
   it('matches applyScheme for every stored value and preference', () => {
@@ -217,6 +223,7 @@ describe('themeScript', () => {
         applyScheme(persist('k').get(), el);
         expect(run(stored, dark)).toEqual({
           dark: el.classes.has('dark'),
+          light: el.classes.has('light'),
           colorScheme: el.style.colorScheme,
         });
       }
