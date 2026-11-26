@@ -160,7 +160,7 @@ describe('createTheme', () => {
 
   it.each(['Dark', 'LIGHT', '', null, 1])('rejects the mode %j', (mode) => {
     const theme = createTheme({ primary: '#940BDF' });
-    const message = `Invalid mode: ${String(mode)}. Expected 'light' or 'dark'`;
+    const message = `Invalid mode: ${String(mode)}. Expected 'light', 'dark' or 'auto'`;
     expect(() => theme.vars(mode as unknown as Mode)).toThrow(
       new Error(message),
     );

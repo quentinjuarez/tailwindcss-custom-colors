@@ -113,8 +113,13 @@ export const loadConfig = (path: string): CliConfig => {
   if (gamut !== undefined && gamut !== 'srgb' && gamut !== 'p3') {
     return invalid('gamut must be "srgb" or "p3"');
   }
-  if (neutral !== undefined && neutral !== 'auto' && neutral !== false) {
-    return invalid('neutral must be "auto" or false');
+  if (
+    neutral !== undefined &&
+    neutral !== true &&
+    neutral !== 'auto' &&
+    neutral !== false
+  ) {
+    return invalid('neutral must be true or false');
   }
   for (const key of ['status', 'roles', 'harmony']) {
     if (parsed[key] !== undefined && typeof parsed[key] !== 'boolean') {

@@ -51,6 +51,14 @@ describe('loadConfig', () => {
     expect(loadConfig(write(JSON.stringify(config)))).toEqual(config);
   });
 
+  it('accepts true, auto and false for neutral', () => {
+    for (const neutral of [true, 'auto', false]) {
+      expect(loadConfig(write(JSON.stringify({ neutral }))).neutral).toBe(
+        neutral,
+      );
+    }
+  });
+
   it('accepts an empty object', () => {
     expect(loadConfig(write('{}'))).toEqual({});
   });
@@ -154,7 +162,7 @@ describe('loadConfig', () => {
       ],
       [{ gamut: 'x' }, /: gamut must be "srgb" or "p3"$/],
       [{ gamut: null }, /: gamut must be "srgb" or "p3"$/],
-      [{ neutral: true }, /: neutral must be "auto" or false$/],
+      [{ neutral: 'yes' }, /: neutral must be true or false$/],
       [{ status: 'yes' }, /: status must be true or false$/],
       [{ roles: 1 }, /: roles must be true or false$/],
       [{ harmony: null }, /: harmony must be true or false$/],

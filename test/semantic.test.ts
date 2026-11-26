@@ -112,9 +112,9 @@ describe('derived scales', () => {
     const run = (options: object) => () =>
       createTheme({ a: 'red' }, options as never);
     expect(run({ neutral: 'x' })).toThrow(
-      "Invalid neutral option: x. Expected 'auto' or false",
+      'Invalid neutral option: x. Expected true or false',
     );
-    expect(run({ neutral: true })).toThrow('Invalid neutral option: true');
+    expect(run({ neutral: 1 })).toThrow('Invalid neutral option: 1');
     expect(run({ status: 'yes' })).toThrow(
       'Invalid status option: yes. Expected true or false',
     );
