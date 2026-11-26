@@ -23,6 +23,8 @@ import {
 
 export type Mode = 'light' | 'dark';
 
+export type ThemeMode = Mode | 'auto';
+
 export type ContrastOptions = {
   method?: ContrastMethod;
   target?: 'AA' | 'AAA' | number;
@@ -33,7 +35,7 @@ export type ThemeOptions = {
   dark?: 'media' | 'class' | 'light-dark' | false;
   gamut?: Gamut;
   contrast?: ContrastOptions;
-  neutral?: 'auto' | false;
+  neutral?: boolean | 'auto';
   status?: boolean;
   roles?: boolean;
   harmony?: boolean;
@@ -56,9 +58,9 @@ export type StyleTarget = {
 
 export type Theme = {
   css: string;
-  vars(mode?: Mode): string;
-  variables(mode?: Mode): Record<string, string>;
-  apply(element?: StyleTarget, mode?: Mode): void;
+  vars(mode?: ThemeMode): string;
+  variables(mode?: ThemeMode): Record<string, string>;
+  apply(element?: StyleTarget, mode?: ThemeMode): void;
   scales: Record<string, { light: Scale; dark: Scale }>;
   report(): ReportRow[];
 };
@@ -149,9 +151,11 @@ const resolveTarget = (element?: StyleTarget): StyleTarget => {
   return doc.documentElement;
 };
 
-const assertMode = (mode: unknown): Mode => {
-  if (mode !== 'light' && mode !== 'dark') {
-    throw new Error(`Invalid mode: ${show(mode)}. Expected 'light' or 'dark'`);
+const assertMode = (mode: unknown): ThemeMode => {
+  if (mode !== 'light' && mode !== 'dark' && mode !== 'auto') {
+    throw new Error(
+      `Invalid mode: ${show(mode)}. Expected 'light', 'dark' or 'auto'`,
+    );
   }
   return mode;
 };
@@ -232,9 +236,9 @@ const resolveContrast = (option: unknown): Contrast => {
 
 const resolveNeutral = (neutral: unknown): boolean => {
   if (neutral === undefined || neutral === false) return false;
-  if (neutral !== 'auto') {
+  if (neutral !== true && neutral !== 'auto') {
     throw new Error(
-      `Invalid neutral option: ${show(neutral)}. Expected 'auto' or false`,
+      `Invalid neutral option: ${show(neutral)}. Expected true or false`,
     );
   }
   return true;
@@ -331,8 +335,22 @@ export const createTheme = (
     if (!Object.hasOwn(scales, name)) addScale(name, base);
   }
 
-  const vars = (mode: Mode = 'light'): string =>
-    declarations(entriesOf(scales, assertMode(mode), contrast.on, roles), '');
+  const modeEntries = (mode: ThemeMode): [string, string][] => {
+    if (mode !== 'auto') return entriesOf(scales, mode, contrast.on, roles);
+    const darkEntries = entriesOf(scales, 'dark', contrast.on, roles);
+    return entriesOf(scales, 'light', contrast.on, roles).map(
+      ([name, value], index): [string, string] => {
+        const other = darkEntries[index]![1];
+        return [
+          name,
+          value === other ? value : `light-dark(${value}, ${other})`,
+        ];
+      },
+    );
+  };
+
+  const vars = (mode: ThemeMode = 'light'): string =>
+    declarations(modeEntries(assertMode(mode)), '');
 
   const tokenLines = Object.keys(scales).flatMap((name) => [
     ...STEPS.map(
@@ -352,18 +370,8 @@ export const createTheme = (
 
   const blocks: string[] = [];
   if (dark === 'light-dark') {
-    const darkEntries = entriesOf(scales, 'dark', contrast.on, roles);
-    const merged = entriesOf(scales, 'light', contrast.on, roles).map(
-      ([name, value], index): [string, string] => {
-        const other = darkEntries[index]![1];
-        return [
-          name,
-          value === other ? value : `light-dark(${value}, ${other})`,
-        ];
-      },
-    );
     blocks.push(
-      `:root {\n  color-scheme: light dark;\n${declarations(merged, '  ')}\n}`,
+      `:root {\n  color-scheme: light dark;\n${declarations(modeEntries('auto'), '  ')}\n}`,
       '.light {\n  color-scheme: light;\n}',
       '.dark {\n  color-scheme: dark;\n}',
     );
@@ -392,12 +400,10 @@ export const createTheme = (
     css: `${blocks.join('\n\n')}\n`,
     vars,
     variables(mode = 'light') {
-      return Object.fromEntries(
-        entriesOf(scales, assertMode(mode), contrast.on, roles),
-      );
+      return Object.fromEntries(modeEntries(assertMode(mode)));
     },
     apply(element, mode = 'light') {
-      const entries = entriesOf(scales, assertMode(mode), contrast.on, roles);
+      const entries = modeEntries(assertMode(mode));
       const target = resolveTarget(element);
       for (const [name, value] of entries) {
         target.style.setProperty(name, value);

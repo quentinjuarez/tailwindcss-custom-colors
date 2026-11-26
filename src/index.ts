@@ -5,6 +5,7 @@ export type {
   ReportRow,
   StyleTarget,
   Theme,
+  ThemeMode,
   ThemeOptions,
 } from './theme.js';
 export type { ContrastMethod } from './color/contrast.js';
