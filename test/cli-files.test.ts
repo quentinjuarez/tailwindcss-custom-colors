@@ -69,7 +69,7 @@ describe('--format', () => {
 
   it('rejects an unknown format and a report combination', () => {
     expect(run(['a=red', '--format', 'xml']).stderr).toBe(
-      'Invalid --format value: xml. Expected css, json, scss or tokens\n',
+      'Invalid --format value: xml. Expected css, json, scss, tokens or html\n',
     );
     expect(run(['a=red', '--format', 'json', '--report']).stderr).toBe(
       '--report cannot be combined with --format\n',
@@ -205,5 +205,33 @@ describe('--check', () => {
     for (const flag of ['--format', '--out', '--check']) {
       expect(stdout).toContain(flag);
     }
+  });
+});
+
+describe('--format html', () => {
+  it('prints the preview page', () => {
+    const result = run(['a=red', '--format', 'html']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      formatTheme(createTheme({ a: 'red' }), 'html', true),
+    );
+    expect(result.stdout.startsWith('<!doctype html>')).toBe(true);
+  });
+
+  it('drops the dark side with --dark none', () => {
+    const { stdout } = run(['a=red', '--format', 'html', '--dark', 'none']);
+    expect(stdout).not.toContain('Page title (dark)');
+  });
+
+  it('writes the page to a file and checks it', () => {
+    const path = join(dir, 'preview.html');
+    expect(run(['a=red', '--format', 'html', '--out', path]).code).toBe(0);
+    expect(readFileSync(path, 'utf8')).toContain('<title>');
+    expect(
+      run(['a=red', '--format', 'html', '--out', path, '--check']).code,
+    ).toBe(0);
+    expect(
+      run(['a=blue', '--format', 'html', '--out', path, '--check']).code,
+    ).toBe(1);
   });
 });

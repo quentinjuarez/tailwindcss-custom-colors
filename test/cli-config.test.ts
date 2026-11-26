@@ -140,6 +140,14 @@ describe('precedence', () => {
     expect(go(['--format', 'scss']).stdout).toContain('$theme-light');
   });
 
+  it('accepts the html format in a config file', () => {
+    writeConfig({ colors: { a: 'red' }, format: 'html', out: 'preview.html' });
+    expect(go([]).code).toBe(0);
+    expect(readFileSync(join(dir, 'preview.html'), 'utf8')).toContain(
+      '<!doctype html>',
+    );
+  });
+
   it('keeps the createTheme error for a bad contrast value', () => {
     writeConfig({ colors: { a: 'red' }, contrast: { method: 'nope' } });
     expect(go([]).stderr).toBe(
@@ -150,7 +158,7 @@ describe('precedence', () => {
   it('names the config file for a bad option value', () => {
     writeConfig({ colors: { a: 'red' }, dark: 'nope' });
     expect(go([]).stderr).toMatch(
-      /^Invalid config file .*: dark must be "media", "class" or false\n$/,
+      /^Invalid config file .*: dark must be "media", "class", "light-dark" or false\n$/,
     );
   });
 

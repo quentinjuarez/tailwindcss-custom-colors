@@ -1,7 +1,8 @@
+import { previewHtml } from './preview.js';
 import { STEPS } from './scale.js';
 import type { Theme } from './theme.js';
 
-export type Format = 'css' | 'json' | 'scss' | 'tokens';
+export type Format = 'css' | 'json' | 'scss' | 'tokens' | 'html';
 
 const EXTENSION = 'tailwindcss-custom-colors';
 
@@ -57,6 +58,7 @@ export const formatTheme = (
   dark: boolean,
 ): string => {
   if (format === 'css') return theme.css;
+  if (format === 'html') return previewHtml(theme, dark);
   if (format === 'json') {
     return json({
       light: theme.variables('light'),

@@ -63,6 +63,7 @@ export const applyScheme = (scheme: Scheme, element?: SchemeTarget): Mode => {
   }
   const mode = scheme === 'system' ? systemMode() : scheme;
   target.classList.toggle('dark', mode === 'dark');
+  target.classList.toggle('light', mode === 'light');
   target.style.colorScheme = mode;
   return mode;
 };
@@ -101,4 +102,4 @@ export const persist = (
 };
 
 export const themeScript = (key: string = 'theme'): string =>
-  `(function(){try{var s;try{s=localStorage.getItem(${JSON.stringify(assertKey(key))})}catch(_){}var d=false;try{d=s==="dark"||(s!=="light"&&matchMedia(${JSON.stringify(QUERY)}).matches)}catch(_){}var e=document.documentElement;e.classList.toggle("dark",d);e.style.colorScheme=d?"dark":"light"}catch(_){}})()`;
+  `(function(){try{var s;try{s=localStorage.getItem(${JSON.stringify(assertKey(key))})}catch(_){}var d=false;try{d=s==="dark"||(s!=="light"&&matchMedia(${JSON.stringify(QUERY)}).matches)}catch(_){}var e=document.documentElement;e.classList.toggle("dark",d);e.classList.toggle("light",!d);e.style.colorScheme=d?"dark":"light"}catch(_){}})()`;

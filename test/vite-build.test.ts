@@ -62,6 +62,19 @@ describe('vite build with tailwind', () => {
     ).rejects.toThrow("Can't resolve 'virtual:theme.css'");
   });
 
+  it('goes through the Lightning CSS fallback with light-dark', async () => {
+    const css = await bundle([
+      plugin({ colors: { primary: '#940BDF' }, dark: 'light-dark' }),
+      ...tailwindcss(),
+    ]);
+    expect(css).not.toContain('light-dark(');
+    expect(css).toContain('--lightningcss-light');
+    expect(css).toContain('--lightningcss-dark');
+    expect(css).toMatch(/\.light\s*\{[^}]*--lightningcss-light/);
+    expect(css).toMatch(/\.dark\s*\{[^}]*--lightningcss-dark/);
+    expect(css).toMatch(/\.bg-primary-500\s*\{[^}]*var\(--primary-500\)/);
+  });
+
   it('honors the theme options', async () => {
     const css = await bundle([
       plugin({ colors: { primary: '#940BDF' }, dark: 'class' }),

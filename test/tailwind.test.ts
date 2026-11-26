@@ -103,4 +103,16 @@ describe('tailwind 4 compile', () => {
     expect(rule(output, '.bg-success-500')).toContain('var(--success-500)');
     expect(rule(output, '.text-neutral-700')).toContain('var(--neutral-700)');
   });
+
+  it('keeps light-dark inside the variables and the references', async () => {
+    const { output } = await build(
+      { primary: '#940BDF' },
+      ['bg-primary-500', 'bg-primary-50', 'text-primary-contrast'],
+      { dark: 'light-dark' },
+    );
+    expect(rule(output, '.bg-primary-50')).toContain('var(--primary-50)');
+    expect(rule(output, '.bg-primary-500 ')).toContain('var(--primary-500)');
+    expect(output).toContain('light-dark(');
+    expect(output).toContain('color-scheme');
+  });
 });

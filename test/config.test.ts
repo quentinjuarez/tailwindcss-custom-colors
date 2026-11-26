@@ -112,7 +112,7 @@ describe('loadConfig', () => {
     }
     for (const format of ['xml', 3, null]) {
       expect(failing({ format })).toThrow(
-        /: format must be css, json, scss or tokens$/,
+        /: format must be css, json, scss, tokens or html$/,
       );
     }
     for (const out of ['', '  ', 3, null, {}]) {
@@ -144,8 +144,14 @@ describe('loadConfig', () => {
 
   it('checks the option types itself, so a flag cannot hide them', () => {
     const cases: [object, RegExp][] = [
-      [{ dark: 'nope' }, /: dark must be "media", "class" or false$/],
-      [{ dark: null }, /: dark must be "media", "class" or false$/],
+      [
+        { dark: 'nope' },
+        /: dark must be "media", "class", "light-dark" or false$/,
+      ],
+      [
+        { dark: null },
+        /: dark must be "media", "class", "light-dark" or false$/,
+      ],
       [{ gamut: 'x' }, /: gamut must be "srgb" or "p3"$/],
       [{ gamut: null }, /: gamut must be "srgb" or "p3"$/],
       [{ neutral: true }, /: neutral must be "auto" or false$/],
