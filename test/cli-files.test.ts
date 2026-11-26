@@ -4,6 +4,8 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -109,6 +111,17 @@ describe('--out', () => {
       expect(oneLine(denied.stderr)).toBe(true);
       expect(denied.stderr).toMatch(/^Cannot write /);
     }
+  });
+
+  it('does not rewrite a file whose content is already right', () => {
+    const path = join(dir, 'theme.css');
+    run(['a=red', '--out', path]);
+    const past = new Date('2020-01-01T00:00:00Z');
+    utimesSync(path, past, past);
+    expect(run(['a=red', '--out', path]).code).toBe(0);
+    expect(statSync(path).mtimeMs).toBe(past.getTime());
+    run(['a=blue', '--out', path]);
+    expect(statSync(path).mtimeMs).not.toBe(past.getTime());
   });
 
   it('needs a path, blank paths included', () => {

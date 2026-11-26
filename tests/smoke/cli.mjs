@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -98,3 +98,55 @@ const orphanSeed = spawnSync(process.execPath, [bin, 'a=red', '--seed', '2'], {
 });
 assert.equal(orphanSeed.status, 1);
 assert.equal(orphanSeed.stderr, '--seed needs --harmony\n');
+
+const watchDir = mkdtempSync(join(tmpdir(), 'tcc-smoke-watch-'));
+try {
+  const config = join(watchDir, 'tailwindcss-custom-colors.config.json');
+  const outFile = join(watchDir, 'theme.css');
+  writeFileSync(
+    config,
+    JSON.stringify({ colors: { a: '#940BDF' }, out: 'theme.css' }),
+  );
+  const child = spawn(process.execPath, [bin, '--watch'], {
+    cwd: watchDir,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const exited = new Promise((resolve) => {
+    child.on('exit', (code) => resolve(code));
+  });
+  const waitFor = async (check) => {
+    for (let i = 0; i < 100; i += 1) {
+      let ready = false;
+      try {
+        ready = check();
+      } catch {
+        ready = false;
+      }
+      if (ready) return true;
+      await new Promise((done) => setTimeout(done, 50));
+    }
+    return false;
+  };
+  const content = () => readFileSync(outFile, 'utf8');
+
+  assert.ok(await waitFor(() => content().includes('--a-500')));
+  writeFileSync(
+    config,
+    JSON.stringify({ colors: { b: '#0B6FDF' }, out: 'theme.css' }),
+  );
+  assert.ok(await waitFor(() => content().includes('--b-500')));
+
+  child.kill('SIGTERM');
+  const code = await Promise.race([
+    exited,
+    new Promise((done) =>
+      setTimeout(() => {
+        child.kill('SIGKILL');
+        done('timeout');
+      }, 5000),
+    ),
+  ]);
+  assert.equal(code, 0);
+} finally {
+  rmSync(watchDir, { recursive: true, force: true });
+}
