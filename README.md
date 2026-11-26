@@ -17,6 +17,7 @@ scale, a contrast color, all behind CSS variables you can swap at runtime.
 - [CLI](#cli)
 - [Generated output](#generated-output)
 - [Formats and CI](#formats-and-ci)
+- [Config file](#config-file)
 - [Vite plugin](#vite-plugin)
 - [Accepted input](#accepted-input)
 - [Gamut](#gamut)
@@ -147,6 +148,8 @@ Then import it:
 | `--roles`         | Add the `surface`, `on-surface`, `border` and `muted` variables                          |
 | `--format json`   | Print `css` (default), `json`, `scss` or `tokens`, see [Formats and CI](#formats-and-ci) |
 | `--out theme.css` | Write the output to a file instead of stdout                                             |
+| `--config x.json` | Read the settings from a JSON file, see [Config file](#config-file)                      |
+| `--watch`         | With a config file and `out`, write again on every config change                         |
 | `--check`         | With `--out`, exit 1 when the file is out of date                                        |
 | `--report`        | Print a contrast report table instead of CSS                                             |
 | `--help`          | Show the usage                                                                           |
@@ -236,6 +239,73 @@ npx tailwindcss-custom-colors primary=#940BDF --out src/theme.css --check
 
 The comparison is exact, line endings included. `--report` cannot be combined
 with `--format`, and a blank `--out` path is rejected.
+
+## Config file
+
+Instead of repeating the arguments, put them in a JSON file named
+`tailwindcss-custom-colors.config.json` next to your `package.json`:
+
+```json
+{
+  "colors": { "primary": "#0B6FDF", "accent": "#FFD534" },
+  "dark": "class",
+  "roles": true,
+  "harmony": true,
+  "out": "src/theme.css"
+}
+```
+
+With no arguments, the CLI reads that file from the current directory and
+writes `src/theme.css`:
+
+```bash
+npx tailwindcss-custom-colors
+npx tailwindcss-custom-colors --check
+```
+
+The second command is the one for CI: it fails when the file is out of date.
+Use `--config path/to/file.json` for another file name or place.
+
+| Key        | Same as                                                              |
+| ---------- | -------------------------------------------------------------------- |
+| `colors`   | the `name=color` arguments, as an object                             |
+| `dark`     | `--dark`, or `ThemeOptions['dark']`: `"media"`, `"class"` or `false` |
+| `gamut`    | `--gamut`                                                            |
+| `contrast` | `--contrast`, `--target` and `--on`, as the `contrast` option object |
+| `neutral`  | `--neutral`: `"auto"`                                                |
+| `status`   | `--status`                                                           |
+| `roles`    | `--roles`                                                            |
+| `harmony`  | `--harmony`                                                          |
+| `seed`     | `--seed`: a number or a string                                       |
+| `format`   | `--format`: `"css"`, `"json"`, `"scss"` or `"tokens"`                |
+| `out`      | `--out`                                                              |
+
+Every key is optional, and any other key is an error. The types of the values are
+checked when the file is read, so a flag cannot hide a mistake. The settings are merged
+in this order: the defaults, then the config file, then the flags you pass. A
+flag replaces the matching config value. `--on`, `--neutral`, `--status`,
+`--roles` and `--harmony` can only turn a setting on. Colors passed as
+`name=color` arguments replace `colors` from the config file entirely, and the
+config file is then not read unless you also pass `--config`.
+
+`out` is relative to the folder of the config file and must stay inside it: no
+absolute path and no `..` leaving the folder, because a config file that comes
+with a cloned project is not code you wrote. A symbolic link cannot lead out of
+the folder either, and a link to nothing is refused, `out` cannot end with a slash, and it cannot be the config
+file itself. `--out` on the command line is yours to type and can point
+anywhere. `--report` prints the table and ignores the `out` of the config file.
+
+### Watch
+
+```bash
+npx tailwindcss-custom-colors --watch
+```
+
+writes the file once, then writes it again every time the config file changes.
+It needs a config file and an `out`, and it cannot be combined with `--check`
+or `--report`. When you save an invalid config, the error is printed and the
+last good file is left untouched. Fix the config and the next save writes
+again. Stop it with Ctrl+C.
 
 ## Vite plugin
 

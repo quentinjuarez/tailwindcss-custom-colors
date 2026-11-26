@@ -1,7 +1,8 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { loadConfig, type CliConfig } from './config.js';
 import { formatTheme, type Format } from './format.js';
 import {
   createTheme,
@@ -10,7 +11,15 @@ import {
   type ThemeOptions,
 } from './theme.js';
 
-export type CliResult = { stdout: string; stderr: string; code: number };
+export type CliResult = {
+  stdout: string;
+  stderr: string;
+  code: number;
+  watch?: string;
+  wrote?: string;
+};
+
+const CONFIG_NAME = 'tailwindcss-custom-colors.config.json';
 
 const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   media: 'media',
@@ -18,7 +27,7 @@ const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report] [--config <path>] [--watch]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
@@ -37,7 +46,12 @@ Options:
   --harmony        derive secondary and tertiary colors
   --seed <value>   seed for --harmony: a number or any text
   --report         print a contrast report instead of CSS
+  --config <path>  read settings from a JSON config file
+  --watch          with a config file and --out, regenerate on every change
   --help           show this help
+
+With no arguments, tailwindcss-custom-colors.config.json in the current
+directory is used when it exists.
 
 Example:
   npx tailwindcss-custom-colors primary=#940BDF --dark class > theme.css
@@ -104,6 +118,9 @@ const toFile = (path: string, output: string, check: boolean): CliResult => {
         );
   }
   try {
+    if (existsSync(path) && readFileSync(path, 'utf8') === output) {
+      return { stdout: '', stderr: '', code: 0 };
+    }
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, output);
   } catch (error) {
@@ -112,7 +129,7 @@ const toFile = (path: string, output: string, check: boolean): CliResult => {
   return { stdout: '', stderr: '', code: 0 };
 };
 
-export const run = (argv: string[]): CliResult => {
+export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
   let parsed;
   try {
     parsed = parseArgs({
@@ -134,6 +151,8 @@ export const run = (argv: string[]): CliResult => {
         out: { type: 'string' },
         check: { type: 'boolean' },
         report: { type: 'boolean' },
+        config: { type: 'string' },
+        watch: { type: 'boolean' },
         help: { type: 'boolean' },
       },
     });
@@ -145,13 +164,30 @@ export const run = (argv: string[]): CliResult => {
 
   if (values.help) return { stdout: USAGE, stderr: '', code: 0 };
 
-  if (positionals.length === 0) {
+  let configPath: string | undefined;
+  if (values.config !== undefined) {
+    if (values.config.trim() === '') return fail('--config needs a path');
+    configPath = resolve(cwd, values.config);
+  } else if (positionals.length === 0 && existsSync(join(cwd, CONFIG_NAME))) {
+    configPath = join(cwd, CONFIG_NAME);
+  }
+
+  if (positionals.length === 0 && configPath === undefined) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens] [--out <path>] [--check] [--report] [--config <path>] [--watch]',
     );
   }
 
-  let format: Format = 'css';
+  let config: CliConfig = {};
+  if (configPath !== undefined) {
+    try {
+      config = loadConfig(configPath);
+    } catch (error) {
+      return fail((error as Error).message);
+    }
+  }
+
+  let format: Format = config.format ?? 'css';
   if (values.format !== undefined) {
     if (!FORMATS.includes(values.format as Format)) {
       return fail(
@@ -166,16 +202,30 @@ export const run = (argv: string[]): CliResult => {
   if (values.out !== undefined && values.out.trim() === '') {
     return fail('--out needs a path');
   }
-  if (values.check && values.out === undefined) {
+  const out =
+    values.out ??
+    (!values.report && config.out !== undefined && configPath !== undefined
+      ? resolve(dirname(configPath), config.out)
+      : undefined);
+  if (values.check && out === undefined) {
     return fail('--check needs --out');
   }
 
+  if (values.watch) {
+    if (configPath === undefined) return fail('--watch needs a config file');
+    if (values.check) return fail('--watch cannot be combined with --check');
+    if (values.report) return fail('--watch cannot be combined with --report');
+    if (out === undefined) return fail('--watch needs --out');
+  }
+
   if (values.seed !== undefined) {
-    if (!values.harmony) return fail('--seed needs --harmony');
+    if (!values.harmony && config.harmony !== true) {
+      return fail('--seed needs --harmony');
+    }
     if (values.seed === '') return fail('--seed needs a value');
   }
 
-  let dark: ThemeOptions['dark'] = 'media';
+  let dark: ThemeOptions['dark'] = config.dark ?? 'media';
   if (values.dark !== undefined) {
     if (!Object.hasOwn(DARK_MODES, values.dark)) {
       return fail(
@@ -185,7 +235,7 @@ export const run = (argv: string[]): CliResult => {
     dark = DARK_MODES[values.dark];
   }
 
-  let gamut: ThemeOptions['gamut'] = 'srgb';
+  let gamut: ThemeOptions['gamut'] = config.gamut ?? 'srgb';
   if (values.gamut !== undefined) {
     if (values.gamut !== 'srgb' && values.gamut !== 'p3') {
       return fail(
@@ -195,62 +245,75 @@ export const run = (argv: string[]): CliResult => {
     gamut = values.gamut;
   }
 
-  let method: ContrastOptions['method'] = 'wcag';
+  const contrast: ContrastOptions = { ...config.contrast };
   if (values.contrast !== undefined) {
     if (values.contrast !== 'wcag' && values.contrast !== 'apca') {
       return fail(
         `Invalid --contrast value: ${values.contrast}. Expected wcag or apca`,
       );
     }
-    method = values.contrast;
+    contrast.method = values.contrast;
   }
 
-  let target: ContrastOptions['target'] = 'AA';
   if (values.target !== undefined) {
     const number = Number(values.target);
     if (values.target === 'AA' || values.target === 'AAA') {
-      target = values.target;
+      contrast.target = values.target;
     } else if (/^\d+(\.\d+)?$/.test(values.target) && number > 0) {
-      target = number;
+      contrast.target = number;
     } else {
       return fail(
         `Invalid --target value: ${values.target}. Expected AA, AAA or a positive number`,
       );
     }
   }
+  if (values.on) contrast.on = true;
 
-  const colors = Object.create(null) as Record<string, string>;
-  for (const pair of positionals) {
-    const index = pair.indexOf('=');
-    const name = index === -1 ? '' : pair.slice(0, index);
-    const color = index === -1 ? '' : pair.slice(index + 1);
-    if (!name || !color) {
-      return fail(`Invalid argument: ${pair}. Expected name=color`);
+  let colors: Record<string, string>;
+  if (positionals.length > 0) {
+    colors = Object.create(null) as Record<string, string>;
+    for (const pair of positionals) {
+      const index = pair.indexOf('=');
+      const name = index === -1 ? '' : pair.slice(0, index);
+      const color = index === -1 ? '' : pair.slice(index + 1);
+      if (!name || !color) {
+        return fail(`Invalid argument: ${pair}. Expected name=color`);
+      }
+      if (Object.hasOwn(colors, name)) {
+        return fail(`Duplicate color name: ${name}`);
+      }
+      colors[name] = color;
     }
-    if (Object.hasOwn(colors, name)) {
-      return fail(`Duplicate color name: ${name}`);
-    }
-    colors[name] = color;
+  } else if (config.colors !== undefined) {
+    colors = config.colors;
+  } else {
+    return fail(
+      'No colors: add them to the config file or pass name=color arguments',
+    );
   }
 
+  const seed = values.seed ?? config.seed;
   try {
     const theme = createTheme(colors, {
       dark,
       gamut,
-      contrast: { method, target, on: values.on === true },
-      neutral: values.neutral ? 'auto' : false,
-      status: values.status === true,
-      roles: values.roles === true,
-      harmony: values.harmony === true,
-      ...(values.seed === undefined ? {} : { seed: values.seed }),
+      contrast,
+      neutral: values.neutral ? 'auto' : config.neutral,
+      status: values.status === true ? true : config.status,
+      roles: values.roles === true ? true : config.roles,
+      harmony: values.harmony === true ? true : config.harmony,
+      ...(seed === undefined ? {} : { seed }),
     });
     const output = values.report
       ? formatReport(theme.report())
       : formatTheme(theme, format, dark !== false);
-    if (values.out === undefined) {
+    if (out === undefined) {
       return { stdout: output, stderr: '', code: 0 };
     }
-    return toFile(values.out, output, values.check === true);
+    const result = toFile(out, output, values.check === true);
+    return values.watch && result.code === 0
+      ? { ...result, watch: configPath, wrote: out }
+      : result;
   } catch (error) {
     return fail((error as Error).message);
   }
