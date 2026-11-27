@@ -48,6 +48,26 @@ A color you define yourself always wins. If you pass a color named `neutral`,
 `success`, `warning`, `danger` or `info`, it is kept as is and the derived one is
 skipped. The roles then use your `neutral`.
 
+## Soft backgrounds
+
+`soft: true` (`--soft` on the CLI) adds one `--<name>-soft` variable per color,
+for quiet backgrounds behind text, such as a success banner or a selected row.
+
+```js
+createTheme({ primary: '#0B6FDF' }, { status: true, soft: true });
+```
+
+```html
+<p class="bg-success-soft text-success-800">Saved.</p>
+```
+
+In light mode it is step 100. Dark mode does not mirror it: the mirrored step
+100 is a loud, saturated block, so `soft` keeps the dark end of the scale
+(lightness of step 950) with only a quarter of the chroma of your color, a
+calm tinted background. In light mode, step 800 text passes WCAG AA on it for
+every status color, and `theme.report()` lists the ratio of every step if you
+want to pick another.
+
 ## Harmony
 
 `harmony: true` derives two more colors from your first one, named `secondary`

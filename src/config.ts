@@ -11,6 +11,7 @@ export type CliConfig = {
   contrast?: ContrastOptions;
   neutral?: ThemeOptions['neutral'];
   status?: boolean;
+  soft?: boolean;
   roles?: boolean;
   harmony?: boolean;
   seed?: number | string;
@@ -25,6 +26,7 @@ const KEYS = [
   'contrast',
   'neutral',
   'status',
+  'soft',
   'roles',
   'harmony',
   'seed',
@@ -121,7 +123,7 @@ export const loadConfig = (path: string): CliConfig => {
   ) {
     return invalid('neutral must be true or false');
   }
-  for (const key of ['status', 'roles', 'harmony']) {
+  for (const key of ['status', 'roles', 'soft', 'harmony']) {
     if (parsed[key] !== undefined && typeof parsed[key] !== 'boolean') {
       return invalid(`${key} must be true or false`);
     }

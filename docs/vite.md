@@ -22,7 +22,7 @@ export default defineConfig({
 
 List `customColors` before `tailwindcss()`: Tailwind resolves imports itself and
 cannot find `virtual:theme.css` otherwise. Every `ThemeOptions` option works
-next to `colors` (`dark`, `gamut`, `contrast`, `neutral`, `status`, `roles`).
+next to `colors` (`dark`, `gamut`, `contrast`, `neutral`, `status`, `roles`, `soft`, `harmony`).
 
 `colors` can also be the path of a JSON file, relative to the Vite root:
 

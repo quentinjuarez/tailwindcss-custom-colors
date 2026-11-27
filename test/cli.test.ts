@@ -264,9 +264,18 @@ describe('semantic flags', () => {
     );
   });
 
+  it('maps --soft to the option', () => {
+    const result = run(['primary=#940BDF', '--soft']);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(
+      createTheme({ primary: '#940BDF' }, { soft: true }).css,
+    );
+    expect(result.stdout).toContain('--primary-soft:');
+  });
+
   it('lists the flags in the usage', () => {
     const { stdout } = run(['--help']);
-    for (const flag of ['--neutral', '--status', '--roles']) {
+    for (const flag of ['--neutral', '--status', '--roles', '--soft']) {
       expect(stdout).toContain(flag);
     }
   });

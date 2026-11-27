@@ -30,13 +30,14 @@ type ThemeOptions = {
   neutral?: boolean | 'auto';
   status?: boolean;
   roles?: boolean;
+  soft?: boolean;
   harmony?: boolean;
   seed?: number | string;
 };
 ```
 
 `dark` defaults to `'media'` and `gamut` to `'srgb'`; `neutral`, `status`,
-`roles` and `harmony` are off, and `seed` is `0`. Any other value throws. See [Dark mode](dark-mode.md#dark-mode),
+`roles`, `soft` and `harmony` are off, and `seed` is `0`. Any other value throws. See [Dark mode](dark-mode.md#dark-mode),
 [Gamut](colors.md#gamut), [Semantic colors](derived-colors.md#semantic-colors) and
 [Contrast](contrast.md#apca-targets-and-on-colors).
 
@@ -181,13 +182,3 @@ const style = `<style>:root{${theme.vars()}}@media (prefers-color-scheme: dark){
 Put this `<style>` after the link to `theme.css`, so it wins the cascade.
 
 Only `apply()` needs a DOM.
-
-## Planned removals in 3.0
-
-Nothing is removed in 2.x and nothing warns at run time. These are planned to
-go in a 3.0, so prefer the alternative today:
-
-- `vars()`: use `variables()`, an object that is easy to turn into text.
-- `persist()` and `watchScheme()` of the [runtime kit](dark-mode.md#runtime-kit):
-  use `localStorage` and `matchMedia('(prefers-color-scheme: dark)')` directly.
-  `applyScheme()` and `themeScript()` stay.
