@@ -28,7 +28,7 @@ const DARK_MODES: Record<string, ThemeOptions['dark']> = {
   none: false,
 };
 
-const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]
+const USAGE = `Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--soft] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]
 
 Prints Tailwind CSS v4 theme CSS for each color.
 
@@ -41,6 +41,7 @@ Options:
   --neutral        add a tinted neutral scale
   --status         add success, warning, danger and info scales
   --roles          add --surface, --on-surface, --border and --muted
+  --soft           add a quiet --<name>-soft background per color
   --format <f>     output format: css (default), json, scss, tokens or html
   --out <path>     write the output to a file instead of stdout
   --check          with --out, fail when the file is out of date
@@ -146,6 +147,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
         neutral: { type: 'boolean' },
         status: { type: 'boolean' },
         roles: { type: 'boolean' },
+        soft: { type: 'boolean' },
         harmony: { type: 'boolean' },
         seed: { type: 'string' },
         format: { type: 'string' },
@@ -175,7 +177,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
 
   if (positionals.length === 0 && configPath === undefined) {
     return fail(
-      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]',
+      'Usage: tailwindcss-custom-colors <name=color>... [--dark media|class|light-dark|none] [--gamut srgb|p3] [--contrast wcag|apca] [--target AA|AAA|<n>] [--on] [--neutral] [--status] [--roles] [--soft] [--harmony] [--seed <value>] [--format css|json|scss|tokens|html] [--out <path>] [--check] [--report] [--config <path>] [--watch]',
     );
   }
 
@@ -302,6 +304,7 @@ export const run = (argv: string[], cwd: string = process.cwd()): CliResult => {
       neutral: values.neutral ? 'auto' : config.neutral,
       status: values.status === true ? true : config.status,
       roles: values.roles === true ? true : config.roles,
+      soft: values.soft === true ? true : config.soft,
       harmony: values.harmony === true ? true : config.harmony,
       ...(seed === undefined ? {} : { seed }),
     });

@@ -5,6 +5,7 @@ import {
   type ContrastMethod,
 } from './color/contrast.js';
 import {
+  clampToGamut,
   oklchToCss,
   oklchToHex,
   type Gamut,
@@ -38,6 +39,7 @@ export type ThemeOptions = {
   neutral?: boolean | 'auto';
   status?: boolean;
   roles?: boolean;
+  soft?: boolean;
   harmony?: boolean;
   seed?: number | string;
 };
@@ -102,6 +104,8 @@ const ROLES: [string, Step][] = [
   ['muted', '600'],
 ];
 
+const SOFT_DARK_CHROMA = 0.25;
+
 const STATUS_BASES: [string, Oklch][] = [
   ['success', { l: 0.62, c: 0.17, h: 145 }],
   ['warning', { l: 0.8, c: 0.16, h: 85 }],
@@ -109,11 +113,14 @@ const STATUS_BASES: [string, Oklch][] = [
   ['info', { l: 0.6, c: 0.16, h: 250 }],
 ];
 
+type Softs = Record<string, Record<Mode, string>>;
+
 const entriesOf = (
   scales: Theme['scales'],
   mode: Mode,
   withOn: boolean,
   withRoles: boolean,
+  softs?: Softs,
 ): [string, string][] => [
   ...Object.entries(scales).flatMap(([name, scale]) => [
     ...STEPS.map((step): [string, string] => [
@@ -126,6 +133,9 @@ const entriesOf = (
           `--${name}-${step}-on`,
           scale[mode].on[step],
         ])
+      : []),
+    ...(softs
+      ? [[`--${name}-soft`, softs[name]![mode]] as [string, string]]
       : []),
   ]),
   ...(withRoles
@@ -284,13 +294,25 @@ export const createTheme = (
   const contrast = resolveContrast(options.contrast);
   const roles = resolveFlag('roles', options.roles);
   const neutral = resolveNeutral(options.neutral) || roles;
+  const soft = resolveFlag('soft', options.soft);
   const status = resolveFlag('status', options.status);
   const harmony = resolveFlag('harmony', options.harmony);
   const seed = resolveSeed(options.seed);
   const scales: Theme['scales'] = {};
+  const softs: Softs = {};
 
   const addScale = (name: string, base: Oklch) => {
     const light = lightScale(base, gamut);
+    if (soft)
+      softs[name] = {
+        light: oklchToCss(light['100']),
+        dark: oklchToCss(
+          clampToGamut(
+            { l: light['950'].l, c: base.c * SOFT_DARK_CHROMA, h: base.h },
+            gamut,
+          ),
+        ),
+      };
     scales[name] = {
       light: buildScale(light, contrast.method),
       dark: buildScale(darkScale(light), contrast.method),
@@ -335,10 +357,19 @@ export const createTheme = (
     if (!Object.hasOwn(scales, name)) addScale(name, base);
   }
 
+  const activeSofts = soft ? softs : undefined;
+
   const modeEntries = (mode: ThemeMode): [string, string][] => {
-    if (mode !== 'auto') return entriesOf(scales, mode, contrast.on, roles);
-    const darkEntries = entriesOf(scales, 'dark', contrast.on, roles);
-    return entriesOf(scales, 'light', contrast.on, roles).map(
+    if (mode !== 'auto')
+      return entriesOf(scales, mode, contrast.on, roles, activeSofts);
+    const darkEntries = entriesOf(
+      scales,
+      'dark',
+      contrast.on,
+      roles,
+      activeSofts,
+    );
+    return entriesOf(scales, 'light', contrast.on, roles, activeSofts).map(
       ([name, value], index): [string, string] => {
         const other = darkEntries[index]![1];
         return [
@@ -357,6 +388,7 @@ export const createTheme = (
       (step) => `  --color-${name}-${step}: var(--${name}-${step});`,
     ),
     `  --color-${name}-contrast: var(--${name}-contrast);`,
+    ...(soft ? [`  --color-${name}-soft: var(--${name}-soft);`] : []),
     ...(contrast.on
       ? STEPS.map(
           (step) => `  --color-${name}-${step}-on: var(--${name}-${step}-on);`,
@@ -377,19 +409,19 @@ export const createTheme = (
     );
   } else {
     blocks.push(
-      `:root {\n${declarations(entriesOf(scales, 'light', contrast.on, roles), '  ')}\n}`,
+      `:root {\n${declarations(entriesOf(scales, 'light', contrast.on, roles, activeSofts), '  ')}\n}`,
     );
   }
   if (dark === 'media') {
     blocks.push(
       `@media (prefers-color-scheme: dark) {\n  :root {\n${declarations(
-        entriesOf(scales, 'dark', contrast.on, roles),
+        entriesOf(scales, 'dark', contrast.on, roles, activeSofts),
         '    ',
       )}\n  }\n}`,
     );
   } else if (dark === 'class') {
     blocks.push(
-      `.dark {\n${declarations(entriesOf(scales, 'dark', contrast.on, roles), '  ')}\n}`,
+      `.dark {\n${declarations(entriesOf(scales, 'dark', contrast.on, roles, activeSofts), '  ')}\n}`,
     );
   }
   blocks.push(

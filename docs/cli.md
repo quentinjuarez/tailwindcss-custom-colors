@@ -14,28 +14,29 @@ Then import it:
 @import './theme.css';
 ```
 
-| Flag                | What it does                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------ |
-| `--dark media`      | Dark variables under `prefers-color-scheme: dark` (default)                                      |
-| `--dark class`      | Dark variables under a `.dark` selector                                                          |
-| `--dark light-dark` | One `light-dark()` per variable, see [Dark mode](dark-mode.md#dark-mode)                         |
-| `--dark none`       | No dark variables                                                                                |
-| `--gamut p3`        | Keep Display P3 colors, `srgb` is the default                                                    |
-| `--contrast apca`   | Pick on-colors with APCA instead of WCAG, see [Contrast](contrast.md#contrast)                   |
-| `--target AAA`      | Pass threshold used by `--report`: `AA` (default), `AAA` or a number                             |
-| `--on`              | Also emit one on-color variable per step                                                         |
-| `--neutral`         | Add a tinted `neutral` scale, see [Semantic colors](derived-colors.md#semantic-colors)           |
-| `--status`          | Add `success`, `warning`, `danger` and `info` scales                                             |
-| `--harmony`         | Derive `secondary` and `tertiary` colors, see [Harmony](derived-colors.md#harmony)               |
-| `--seed 3`          | With `--harmony`, pick another palette: a number or any text                                     |
-| `--roles`           | Add the `surface`, `on-surface`, `border` and `muted` variables                                  |
-| `--format json`     | Print `css` (default), `json`, `scss`, `tokens` or `html`, see [Formats and CI](#formats-and-ci) |
-| `--out theme.css`   | Write the output to a file instead of stdout                                                     |
-| `--config x.json`   | Read the settings from a JSON file, see [Config file](#config-file)                              |
-| `--watch`           | With a config file and `out`, write again on every config change                                 |
-| `--check`           | With `--out`, exit 1 when the file is out of date                                                |
-| `--report`          | Print a contrast report table instead of CSS                                                     |
-| `--help`            | Show the usage                                                                                   |
+| Flag                | What it does                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `--dark media`      | Dark variables under `prefers-color-scheme: dark` (default)                                                  |
+| `--dark class`      | Dark variables under a `.dark` selector                                                                      |
+| `--dark light-dark` | One `light-dark()` per variable, see [Dark mode](dark-mode.md#dark-mode)                                     |
+| `--dark none`       | No dark variables                                                                                            |
+| `--gamut p3`        | Keep Display P3 colors, `srgb` is the default                                                                |
+| `--contrast apca`   | Pick on-colors with APCA instead of WCAG, see [Contrast](contrast.md#contrast)                               |
+| `--target AAA`      | Pass threshold used by `--report`: `AA` (default), `AAA` or a number                                         |
+| `--on`              | Also emit one on-color variable per step                                                                     |
+| `--neutral`         | Add a tinted `neutral` scale, see [Semantic colors](derived-colors.md#semantic-colors)                       |
+| `--status`          | Add `success`, `warning`, `danger` and `info` scales                                                         |
+| `--harmony`         | Derive `secondary` and `tertiary` colors, see [Harmony](derived-colors.md#harmony)                           |
+| `--seed 3`          | With `--harmony`, pick another palette: a number or any text                                                 |
+| `--roles`           | Add the `surface`, `on-surface`, `border` and `muted` variables                                              |
+| `--soft`            | Add a quiet `--<name>-soft` background per color, see [Soft backgrounds](derived-colors.md#soft-backgrounds) |
+| `--format json`     | Print `css` (default), `json`, `scss`, `tokens` or `html`, see [Formats and CI](#formats-and-ci)             |
+| `--out theme.css`   | Write the output to a file instead of stdout                                                                 |
+| `--config x.json`   | Read the settings from a JSON file, see [Config file](#config-file)                                          |
+| `--watch`           | With a config file and `out`, write again on every config change                                             |
+| `--check`           | With `--out`, exit 1 when the file is out of date                                                            |
+| `--report`          | Print a contrast report table instead of CSS                                                                 |
+| `--help`            | Show the usage                                                                                               |
 
 On invalid input the CLI prints a one line error to stderr and exits with
 code 1.
@@ -56,7 +57,7 @@ code 1.
 `tokens` format follows the stable Design Tokens format (2025.10): each step and
 the contrast color is an sRGB color object with `components` and `hex`, and the
 dark hex sits under `$extensions["tailwindcss-custom-colors"].dark`. It carries
-neither wide gamut precision nor the roles and on-colors: use `json` for those.
+neither wide gamut precision nor the roles, soft backgrounds and on-colors: use `json` for those.
 
 `--format html` writes a preview page you can open in a browser, with no server
 and no network: every scale in light and dark with its hex and the text color
@@ -122,6 +123,7 @@ Use `--config path/to/file.json` for another file name or place.
 | `neutral`  | `--neutral`: `true` (`"auto"` also works)                                            |
 | `status`   | `--status`                                                                           |
 | `roles`    | `--roles`                                                                            |
+| `soft`     | `--soft`                                                                             |
 | `harmony`  | `--harmony`                                                                          |
 | `seed`     | `--seed`: a number or a string                                                       |
 | `format`   | `--format`: `"css"`, `"json"`, `"scss"`, `"tokens"` or `"html"`                      |
@@ -131,7 +133,7 @@ Every key is optional, and any other key is an error. The types of the values ar
 checked when the file is read, so a flag cannot hide a mistake. The settings are merged
 in this order: the defaults, then the config file, then the flags you pass. A
 flag replaces the matching config value. `--on`, `--neutral`, `--status`,
-`--roles` and `--harmony` can only turn a setting on. Colors passed as
+`--roles`, `--soft` and `--harmony` can only turn a setting on. Colors passed as
 `name=color` arguments replace `colors` from the config file entirely, and the
 config file is then not read unless you also pass `--config`.
 

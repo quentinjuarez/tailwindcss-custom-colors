@@ -113,7 +113,7 @@ const { createTheme } = require('tailwindcss-custom-colors');
 - [Vite plugin](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/vite.md)
 - [Accepted color syntaxes and wide gamut](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/colors.md)
 - [Dark mode strategies and the runtime kit](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/dark-mode.md)
-- [Neutral, status colors, roles and harmony](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/derived-colors.md)
+- [Neutral, status colors, roles, soft backgrounds and harmony](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/derived-colors.md)
 - [Contrast, APCA and on-colors](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/contrast.md)
 - [API reference, generated output and server rendering](https://github.com/quentinjuarez/tailwindcss-custom-colors/blob/main/docs/api.md)
 
